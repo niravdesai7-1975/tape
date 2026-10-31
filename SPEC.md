@@ -10,13 +10,13 @@ oracle freshness.
 |---|---|
 | The agent commits sha256(payload) with market, side and price; the commit time is stored | C_00, C_01 |
 | Reveal (the call goes out to paying members) only by the call's agent, once; nothing readable goes on chain | C_02 |
-| An allowlisted member buys read access; the price goes to the agent; a second buy is a no-op | C_03 |
+| An allowlisted member (anyone, when the list is empty) buys the call; the price goes to the agent; a second buy is a no-op | C_03, C_03b |
 | Only the grader grades, only ≥ 4h after the reveal, once, publishing the levels, which must hash to the commit; long right above entry by > 10 bp, wrong below, flat inside; short mirrors | C_04, C_04b |
 | `record(agent, window_n)` = (graded calls in the last window, how many right); flat counts in n, not in right | C_05/C_11 |
 | A public chain hides nothing: buyers are recorded (`has_bought`) and the app serves them the levels off chain; the levels go on chain only at the grade | C_06 |
 | An open (ungraded) hash cannot be committed again | C_07 |
 | The venue attaches its fill id to a call it was traded on | C_08 |
-| Events; end to end commit → buy → reveal → grade → record | C_09, C_10 (contract tests, Nov 1) |
+| End to end on chain: buy pays the agent, an early or forged grade is rejected, the levels publish at the grade | C_10 (`e2e.rs`) |
 
 ## `guard` — the agent wallet
 
@@ -39,7 +39,7 @@ stop (none / wrong side / farther than the owner's max) → call → record.**
 | Freeze when equity < peak × (1 − freeze); the peak follows equity up; only the owner unfreezes, which resets the peak. A condition on equity, not a clock | G_08 |
 | The agent's record over its last window must reach the owner's bar; when the record recovers the grant works again by itself | G_09 |
 | With `require_call`, every open cites this agent's revealed, ungraded call, same market and side; once per owner | G_10 |
-| The agent closes only positions it opened under the grant; funds path; refusal events with codes; the demo beat end to end | G_11–G_14 (contract tests, Nov 1) |
+| The agent closes only positions it opened under the grant; it cannot withdraw the owner's money; refusals are events with codes; the demo beat end to end | G_11–G_14 (`e2e.rs`) |
 
 Refusal codes: REVOKED, FROZEN, MARKET, SIZE, COLLATERAL, LEVERAGE, EXPOSURE, NO_STOP, STOP_SIDE, STOP_FAR, CALL, RECORD.
 
@@ -61,7 +61,9 @@ max(tick, 1 bp) rounded to the tick against the taker. Counterparty: an operator
 | Oracle older than 60 s or confidence wider than 0.5% refused; replay prices only in demo mode | V_11 |
 | Adding averages the entry | V_12 |
 | A beneficiary may be named only by `guard` | V_15 |
-| Events; end to end with a target and a liquidation; totals reconcile | V_13, V_14 (contract tests, Nov 1) |
+| A market close | V_16 |
+| End to end: a keeper liquidation with the bounty; every dollar held is a balance, collateral or the pool | V_14 (`e2e.rs`) |
+| Demo mode: the keeper's recorded timestamps are the clock, forward only, keeper only | T_00 (`e2e.rs`) |
 
 ## Demo (`make demo`, one recorded day)
 
