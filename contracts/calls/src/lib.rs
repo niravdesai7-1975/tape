@@ -1,5 +1,7 @@
 //! `calls` — an agent's call is committed (a hash) before the market moves, revealed to the people who pay for it, and
-//! graded four hours later by the grader key. The record is public; the levels are not. `guard` reads
+//! graded four hours later by the grader key. A public chain hides nothing, so the levels never go on chain before the
+//! grade: buyers get them from the app (which checks `has_bought`), and the grade publishes them on chain, where they must
+//! match the hash committed before the move. The record is public. `guard` reads
 //! `record(agent, window_n)` as its reputation input. The core is plain Rust and unit-tested; the NEAR contract wrapper
 //! (storage, NEP-141 payment, events, the encrypted/served payload) sits on top.
 //!
@@ -71,8 +73,8 @@ impl Book {
                                commit_ts: now, price, reveal_ts: None, payload: None, grade: None, fill_id: None });
         Ok(id)
     }
-    /// Only the call's agent; sha256(payload) must equal the committed hash.
-    pub fn reveal(&mut self, caller: &str, id: u64, payload: &str, now: u64) -> Result<(), CallError> {
+    /// Only the call's agent, once: the moment the call goes out to paying members. Nothing readable goes on chain.
+    pub fn reveal(&mut self, caller: &str, id: u64, now: u64) -> Result<(), CallError> {
         let c = self.calls.get_mut(id as usize).ok_or(CallError::NoSuchCall)?;
         if c.agent != caller {
             return Err(CallError::NotAgent);
@@ -80,11 +82,7 @@ impl Book {
         if c.reveal_ts.is_some() {
             return Err(CallError::AlreadyRevealed);
         }
-        if hash_hex(payload) != c.commit_hash {
-            return Err(CallError::HashMismatch);
-        }
         c.reveal_ts = Some(now);
-        c.payload = Some(payload.to_string());
         Ok(())
     }
     /// An allowlisted member buys read access: Some((agent, price)) to pay; a second buy is a no-op (None).
@@ -100,8 +98,8 @@ impl Book {
         self.buyers.push((member.to_string(), id));
         Ok(Some(pay))
     }
-    /// Only the grader, only after the reveal + 4h; once.
-    pub fn grade(&mut self, caller: &str, id: u64, px_entry: u64, px_4h: u64, now: u64) -> Result<Outcome, CallError> {
+    /// Only the grader, only after the reveal + 4h, once; publishes the levels, which must hash to the commit.
+    pub fn grade(&mut self, caller: &str, id: u64, payload: &str, px_entry: u64, px_4h: u64, now: u64) -> Result<Outcome, CallError> {
         if caller != self.grader {
             return Err(CallError::NotGrader);
         }
@@ -114,14 +112,21 @@ impl Book {
         if now < revealed + GRADE_AFTER_S {
             return Err(CallError::TooEarly);
         }
+        if hash_hex(payload) != c.commit_hash {
+            return Err(CallError::HashMismatch);
+        }
         let o = outcome(c.side, px_entry, px_4h, flat_bp);
         c.grade = Some(Grade { outcome: o, px_entry, px_4h, ts: now });
+        c.payload = Some(payload.to_string());
         Ok(o)
     }
-    /// The payload only to buyers and the agent; the hash, times and grade are public.
-    pub fn payload_for(&self, viewer: &str, id: u64) -> Option<String> {
-        let c = self.calls.get(id as usize)?;
-        if c.agent == viewer || self.bought(viewer, id) { c.payload.clone() } else { None }
+    /// Whether a member paid for a call — the app serves the levels to buyers off chain on this.
+    pub fn has_bought(&self, member: &str, id: u64) -> bool {
+        self.bought(member, id)
+    }
+    /// The levels, public once graded (and checkable against the commit hash); nothing before.
+    pub fn published(&self, id: u64) -> Option<String> {
+        self.calls.get(id as usize).and_then(|c| c.grade.as_ref().and(c.payload.clone()))
     }
     /// The venue attaches a fill to a call it was traded on.
     pub fn traded(&mut self, caller: &str, id: u64, fill_id: &str) -> Result<(), CallError> {

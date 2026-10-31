@@ -9,11 +9,11 @@ oracle freshness.
 | Rule | Test |
 |---|---|
 | The agent commits sha256(payload) with market, side and price; the commit time is stored | C_00, C_01 |
-| Reveal only by the call's agent, and sha256(payload) must equal the commit; once | C_02 |
+| Reveal (the call goes out to paying members) only by the call's agent, once; nothing readable goes on chain | C_02 |
 | An allowlisted member buys read access; the price goes to the agent; a second buy is a no-op | C_03 |
-| Only the grader grades, only ≥ 4h after the reveal, once; long right above entry by > 10 bp, wrong below, flat inside; short mirrors | C_04, C_04b |
+| Only the grader grades, only ≥ 4h after the reveal, once, publishing the levels, which must hash to the commit; long right above entry by > 10 bp, wrong below, flat inside; short mirrors | C_04, C_04b |
 | `record(agent, window_n)` = (graded calls in the last window, how many right); flat counts in n, not in right | C_05/C_11 |
-| The payload is visible only to buyers and the agent; hash, times and grade are public | C_06 |
+| A public chain hides nothing: buyers are recorded (`has_bought`) and the app serves them the levels off chain; the levels go on chain only at the grade | C_06 |
 | An open (ungraded) hash cannot be committed again | C_07 |
 | The venue attaches its fill id to a call it was traded on | C_08 |
 | Events; end to end commit → buy → reveal → grade → record | C_09, C_10 (contract tests, Nov 1) |

@@ -23,15 +23,16 @@ fn c01_commit_stores_the_hash_and_time() {
 }
 
 #[test]
-fn c02_reveal_only_by_the_agent_and_only_the_committed_payload() {
+fn c02_reveal_only_by_the_agent_once() {
+    // the reveal is the moment the call goes out to paying members; the levels themselves stay off chain until the grade
     let mut b = book();
     let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();
-    assert_eq!(b.reveal("eve", id, PAYLOAD, 1_100), Err(CallError::NotAgent));
-    assert_eq!(b.reveal("machine", id, "{\"changed\":true}", 1_100), Err(CallError::HashMismatch));
-    assert_eq!(b.reveal("machine", id, PAYLOAD, 1_100), Ok(()));
+    assert_eq!(b.reveal("eve", id, 1_100), Err(CallError::NotAgent));
+    assert_eq!(b.reveal("machine", id, 1_100), Ok(()));
     assert_eq!(b.calls[0].reveal_ts, Some(1_100));
-    assert_eq!(b.reveal("machine", id, PAYLOAD, 1_200), Err(CallError::AlreadyRevealed));
-    assert_eq!(b.reveal("machine", 99, PAYLOAD, 1_200), Err(CallError::NoSuchCall));
+    assert_eq!(b.calls[0].payload, None);                          // nothing readable on chain yet
+    assert_eq!(b.reveal("machine", id, 1_200), Err(CallError::AlreadyRevealed));
+    assert_eq!(b.reveal("machine", 99, 1_200), Err(CallError::NoSuchCall));
 }
 
 #[test]
@@ -44,15 +45,18 @@ fn c03_buy_pays_the_agent_once_and_respects_the_allowlist() {
 }
 
 #[test]
-fn c04_grade_by_the_grader_four_hours_after_the_reveal() {
+fn c04_grade_by_the_grader_four_hours_after_the_reveal_publishing_the_committed_levels() {
     let mut b = book();
     let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();
-    assert_eq!(b.grade("grader", id, 4_860_500, 4_950_000, 1_000 + 5 * H), Err(CallError::NotRevealed));
-    b.reveal("machine", id, PAYLOAD, 1_100).unwrap();
-    assert_eq!(b.grade("machine", id, 4_860_500, 4_950_000, 1_100 + 4 * H), Err(CallError::NotGrader));
-    assert_eq!(b.grade("grader", id, 4_860_500, 4_950_000, 1_100 + 4 * H - 1), Err(CallError::TooEarly));
-    assert_eq!(b.grade("grader", id, 4_860_500, 4_950_000, 1_100 + 4 * H), Ok(Outcome::Right));
-    assert_eq!(b.grade("grader", id, 4_860_500, 4_700_000, 1_100 + 5 * H), Err(CallError::AlreadyGraded));
+    assert_eq!(b.grade("grader", id, PAYLOAD, 4_860_500, 4_950_000, 1_000 + 5 * H), Err(CallError::NotRevealed));
+    b.reveal("machine", id, 1_100).unwrap();
+    assert_eq!(b.grade("machine", id, PAYLOAD, 4_860_500, 4_950_000, 1_100 + 4 * H), Err(CallError::NotGrader));
+    assert_eq!(b.grade("grader", id, PAYLOAD, 4_860_500, 4_950_000, 1_100 + 4 * H - 1), Err(CallError::TooEarly));
+    // the levels published at the grade must be the ones locked before the move
+    assert_eq!(b.grade("grader", id, "{\"changed\":true}", 4_860_500, 4_950_000, 1_100 + 4 * H), Err(CallError::HashMismatch));
+    assert_eq!(b.grade("grader", id, PAYLOAD, 4_860_500, 4_950_000, 1_100 + 4 * H), Ok(Outcome::Right));
+    assert_eq!(b.calls[0].payload.as_deref(), Some(PAYLOAD));
+    assert_eq!(b.grade("grader", id, PAYLOAD, 4_860_500, 4_700_000, 1_100 + 5 * H), Err(CallError::AlreadyGraded));
 }
 
 #[test]
@@ -67,8 +71,8 @@ fn c04b_outcome_math() {
 fn graded(b: &mut Book, agent: &str, side: Side, entry: u64, px4h: u64, t: u64) {
     let p = format!("{agent}-{t}");
     let id = b.commit(agent, &hash_hex(&p), "NEAR", side, 5_000_000, t).unwrap();
-    b.reveal(agent, id, &p, t).unwrap();
-    b.grade("grader", id, entry, px4h, t + GRADE_AFTER_S).unwrap();
+    b.reveal(agent, id, t).unwrap();
+    b.grade("grader", id, &p, entry, px4h, t + GRADE_AFTER_S).unwrap();
 }
 
 #[test]
@@ -85,14 +89,16 @@ fn c05_c11_record_counts_the_last_window() {
 }
 
 #[test]
-fn c06_payload_only_to_buyers_and_the_agent() {
+fn c06_buyers_are_known_and_the_levels_go_public_only_at_the_grade() {
     let mut b = book();
     let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();
-    b.reveal("machine", id, PAYLOAD, 1_100).unwrap();
-    assert_eq!(b.payload_for("bob", id), None);
+    b.reveal("machine", id, 1_100).unwrap();
     b.buy("alice", id).unwrap();
-    assert_eq!(b.payload_for("alice", id).as_deref(), Some(PAYLOAD));
-    assert_eq!(b.payload_for("machine", id).as_deref(), Some(PAYLOAD));
+    assert!(b.has_bought("alice", id));                            // the app serves the levels to buyers off chain
+    assert!(!b.has_bought("bob", id));
+    assert_eq!(b.published(id), None);
+    b.grade("grader", id, PAYLOAD, 4_860_500, 4_950_000, 1_100 + 4 * H).unwrap();
+    assert_eq!(b.published(id).as_deref(), Some(PAYLOAD));         // anyone can check it against the commit hash
 }
 
 #[test]
