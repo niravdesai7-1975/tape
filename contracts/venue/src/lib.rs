@@ -1,5 +1,5 @@
 //! `venue` — oracle-priced perps on NEAR. The risk core is plain Rust so every rule is unit-tested; the NEAR contract
-//! wrapper (storage, NEP-141 USDC, events, keeper calls) sits on top of it (Nov 1+).
+//! wrapper (storage, NEP-141 USDC, events, keeper calls) sits on top of it.
 //!
 //! Units: prices in micro-USD per coin (4.8605 → 4_860_500); contract sizes in micro-coins (500 NEAR → 500_000_000);
 //! money in micro-USD (USDC has 6 decimals). Notional = qty × size × px / 1e6.
