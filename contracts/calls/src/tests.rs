@@ -116,3 +116,10 @@ fn c08_the_venue_attaches_a_fill() {
     assert_eq!(b.traded("venue", id, "fill-1"), Ok(()));
     assert_eq!(b.calls[0].fill_id.as_deref(), Some("fill-1"));
 }
+
+#[test]
+fn c03b_an_empty_allowlist_is_open_to_everyone() {
+    let mut b = Book::new("grader", "venue", &[], 10);
+    let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();
+    assert_eq!(b.buy("anyone", id), Ok(Some(("machine".to_string(), 5_000_000))));
+}

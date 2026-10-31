@@ -8,5 +8,7 @@ license.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+borsh = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 hex = "0.4"

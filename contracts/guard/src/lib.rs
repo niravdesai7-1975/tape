@@ -8,10 +8,10 @@
 
 pub const BP: u128 = 10_000;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Side { Long, Short }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Policy {
     pub markets: Vec<String>,
     pub max_qty: u32,
@@ -27,22 +27,22 @@ pub struct Policy {
     pub require_call: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Order { pub market: String, pub side: Side, pub qty: u32, pub collateral: u128, pub notional: u128,
                    pub fill_px: u64, pub stop_px: Option<u64>, pub call_id: Option<u64> }
 
 /// The agent's graded record over its last `window_n` calls, as `calls.record(agent, window_n)` returns it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Record { pub n: u32, pub right: u32 }
 
 /// What `guard` needs to know about a cited call.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct CallView { pub id: u64, pub agent: String, pub market: String, pub side: Side, pub revealed: bool, pub graded: bool }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Refusal { Revoked, Frozen, Market, Size, Collateral, Leverage, Exposure, NoStop, StopSide, StopFar, Call, Record }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum WalletError { NotOwner, ToNotOwner, Insufficient }
 
 /// Everything the check reads, gathered by the contract before it decides.
@@ -92,7 +92,7 @@ pub fn check(p: &Policy, o: &Order, c: &Ctx) -> Result<(), Refusal> {
 }
 
 /// The owner's money in `guard`: free balance, collateral out on the venue, the equity peak and the freeze.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Account { pub owner: String, pub balance: u128, pub locked: u128, pub peak: u128, pub frozen: bool }
 
 impl Account {

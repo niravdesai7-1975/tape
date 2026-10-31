@@ -129,3 +129,14 @@ fn v15_beneficiary_only_from_guard() {
     assert_eq!(check_beneficiary("eve.testnet", Some("alice.testnet"), &wl), Err(VenueError::BeneficiaryNotAllowed));
     assert_eq!(check_beneficiary("eve.testnet", None, &wl), Ok(()));
 }
+
+#[test]
+fn v16_market_close() {
+    let m = Market::near();
+    let s = close(&m, &long2(), 4_950_000);                         // sell at 4.95 − a tick
+    assert_eq!(s.exit_px, 4_949_000);
+    assert_eq!(s.pnl, 88_000_000);                                  // (4.949 − 4.861) × 1,000 = +$88
+    assert_eq!(s.fee, 2_969_400);
+    assert_eq!(s.to_owner, 2_126_030_600);
+    assert_eq!((s.bounty, s.shortfall), (0, 0));
+}

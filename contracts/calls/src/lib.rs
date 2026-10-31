@@ -10,23 +10,23 @@
 pub const BP: u128 = 10_000;
 pub const GRADE_AFTER_S: u64 = 4 * 3600;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Side { Long, Short }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Outcome { Right, Wrong, Flat }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Grade { pub outcome: Outcome, pub px_entry: u64, pub px_4h: u64, pub ts: u64 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Call {
     pub id: u64, pub agent: String, pub market: String, pub side: Side, pub commit_hash: String, pub commit_ts: u64,
     pub price: u128, pub reveal_ts: Option<u64>, pub payload: Option<String>, pub grade: Option<Grade>,
     pub fill_id: Option<String>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum CallError { NoSuchCall, NotAgent, NotGrader, NotVenue, Duplicate, AlreadyRevealed, HashMismatch,
                      NotRevealed, TooEarly, AlreadyGraded, NotAllowed }
 
@@ -49,6 +49,7 @@ pub fn outcome(side: Side, px_entry: u64, px_4h: u64, flat_bp: u32) -> Outcome {
     }
 }
 
+#[derive(Clone, Debug, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Book {
     pub calls: Vec<Call>,
     pub grader: String,
@@ -88,7 +89,7 @@ impl Book {
     /// An allowlisted member buys read access: Some((agent, price)) to pay; a second buy is a no-op (None).
     pub fn buy(&mut self, member: &str, id: u64) -> Result<Option<(String, u128)>, CallError> {
         let c = self.calls.get(id as usize).ok_or(CallError::NoSuchCall)?;
-        if !self.allowlist.iter().any(|a| a == member) {
+        if !self.allowlist.is_empty() && !self.allowlist.iter().any(|a| a == member) {
             return Err(CallError::NotAllowed);
         }
         if self.bought(member, id) {

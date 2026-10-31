@@ -8,10 +8,10 @@
 pub const BP: u128 = 10_000;
 pub const MICRO: u128 = 1_000_000;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Side { Long, Short }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Market {
     pub id: String,
     pub contract_size: u64,          // micro-coins per contract
@@ -35,7 +35,7 @@ impl Market {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Position {
     pub owner: String,
     pub beneficiary: Option<String>,
@@ -48,18 +48,18 @@ pub struct Position {
     pub target_px: Option<u64>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Oracle { pub px: u64, pub conf: u64, pub ts: u64, pub replay: bool }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum VenueError { BelowInitialMargin, PoolCapacity, BadQty, OracleStale, OracleWide, ReplayNotAllowed,
                       BuilderFeeTooHigh, NotLiquidatable, NotTriggered, BeneficiaryNotAllowed }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub enum Trigger { Stop, Target }
 
 /// What a close pays out.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Settlement { pub exit_px: u64, pub pnl: i128, pub fee: u128, pub bounty: u128, pub to_owner: u128, pub shortfall: u128 }
 
 /// Fill price for a taker: buys pay up, sells receive less; slippage = max(tick, px × slippage_bp), on the tick.
@@ -149,6 +149,10 @@ pub fn add_to(p: &Position, qty: u32, fill: u64, collateral: u128) -> Position {
     let total = p.qty + qty;
     let entry = (p.entry_px as u128 * p.qty as u128 + fill as u128 * qty as u128) / total as u128;
     Position { qty: total, entry_px: entry as u64, collateral: p.collateral + collateral, ..p.clone() }
+}
+/// The owner (or the agent that opened it) closes the whole position at the oracle ∓ slippage.
+pub fn close(m: &Market, p: &Position, oracle: u64) -> Settlement {
+    settle(m, p, oracle, 0)
 }
 /// A beneficiary may be named only by a whitelisted caller (the `guard` contract).
 pub fn check_beneficiary(caller: &str, beneficiary: Option<&str>, whitelist: &[&str]) -> Result<(), VenueError> {
