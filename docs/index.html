@@ -109,12 +109,13 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
       <div class="card" style="margin-top:0"><h2 style="color:var(--down)">Before</h2>
         <div class="rule"><i style="background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down)">✕</i><div>Builder codes on Hyperliquid<small>closed to the US</small></div></div>
         <div class="rule"><i style="background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down)">✕</i><div>Hand it your keys, or approve every trade</div></div>
+        <div class="rule"><i style="background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down)">✕</i><div>No record you can check</div></div>
       </div>
       <div class="card"><h2 style="color:var(--up)">On NEAR</h2>
-        <div class="rule"><i>✓</i><div>Fund from Coinbase<small>NEAR Intents</small></div></div>
-        <div class="rule"><i>✓</i><div>Pay the agent on chain</div></div>
-        <div class="rule"><i>✓</i><div>A key that can only trade<small>function-call key</small></div></div>
-        <div class="rule"><i>✓</i><div>Every call checked on chain</div></div>
+        <div class="rule"><i>✓</i><div>Pay any agent per call<small>$5 · USDC via NEAR Intents</small></div></div>
+        <div class="rule"><i>✓</i><div>Its record, locked before the move</div></div>
+        <div class="rule"><i>✓</i><div>Your rules on chain — every order asked first</div></div>
+        <div class="rule"><i>✓</i><div>Your money stays on Coinbase<small>every fill's receipt on chain</small></div></div>
       </div>
     </div>
     <div id="intro-d" style="display:none">
@@ -126,21 +127,21 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
     <button class="btn" id="b0" style="visibility:hidden">Continue with Face ID</button>
   </section>
   <section class="screen" id="s1">
-    <h1>Add funds</h1>
-    <p class="sub">USDC from Coinbase, on any chain. NEAR Intents brings it to your NEAR account.</p>
+    <h1>Connect Coinbase</h1>
+    <p class="sub">Your money stays in your Coinbase account. A key that can trade and cannot withdraw.</p>
     <div style="display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:6px;margin-top:10px;position:relative" id="lane">
-      <div class="card" style="margin:0;text-align:center"><h2>Coinbase</h2><div class="big" style="font-size:24px" id="cb">$5,000</div><div class="note">USDC on Base</div></div>
+      <div class="card" style="margin:0;text-align:center"><h2>Coinbase</h2><div class="big" style="font-size:24px" id="cb">$5,000</div><div class="note">stays here</div></div>
       <div style="text-align:center;font-size:26px;color:var(--accent)">→</div>
-      <div class="card" style="margin:0;text-align:center"><h2>NEAR</h2><div class="big" style="font-size:24px" id="bal1">$0.00</div><div class="note" id="arr">alice</div></div>
+      <div class="card" style="margin:0;text-align:center"><h2>NEAR</h2><div class="big" style="font-size:24px" id="bal1">$0.00</div><div class="note" id="arr">fees · $5 per call</div></div>
       <div class="coin" id="coin" style="left:60px;top:46px">$</div>
     </div>
-    <div class="card"><div class="row"><span>Arrives in</span><b id="iq-t">about a minute</b></div><div class="row"><span>100 USDC on Base becomes</span><b id="iq">— USDC on NEAR</b></div></div>
-    <button class="btn" id="b1">Add funds</button>
+    <div class="card"><div class="row"><span>Trade-only key</span><b style="color:var(--up)">can trade · cannot withdraw</b></div><div class="row"><span>$20 of fees arrive in</span><b id="iq-t">about a minute</b></div></div>
+    <button class="btn" id="b1">Connect</button>
     <div class="ghost" id="ghost1">NEAR Intents<small>no bridge, no gas</small></div>
   </section>
   <section class="screen" id="s2">
     <h1>The Machine</h1>
-    <p class="sub">Hire it. Rules on chain, keys with you — it can trade, never withdraw.</p>
+    <p class="sub">Hire it for $5 a call. Your rules on chain; it asks before every order.</p>
     <div class="card"><h2>Record · last 5 graded calls</h2><div class="big" id="rec" style="font-size:34px">—</div><div class="bar" id="bar"></div></div>
     <div class="card"><h2>What it sees right now</h2><div id="read" style="font-size:15px">—</div></div>
     <div class="card"><h2>Your rules</h2>
@@ -150,31 +151,30 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
       <div class="rule"><i>✓</i><div>Only while its record is above 55%</div></div>
     </div>
     <button class="btn" id="b2">Let it trade for me</button>
-    <div class="ghost" id="ghost2">🔑 one key, one tooth<small>it can trade, never withdraw</small></div>
+    <div class="ghost" id="ghost2">Your rules on chain<small>every order asked first</small></div>
   </section>
 
   <section class="screen" id="s3">
-    <div class="row" style="padding:0"><span style="color:var(--dim)">Your money</span><span class="pill ok" id="st">THE MACHINE IS TRADING</span></div>
+    <div class="row" style="padding:0"><span style="color:var(--dim)">Your money · on Coinbase</span><span class="pill ok" id="st">THE MACHINE IS TRADING</span></div>
     <div class="big" id="eq">$0.00</div>
     <div class="delta" id="dl">&nbsp;</div>
     <div class="banner" id="ban"></div>
-    <div class="card" id="poscard" style="display:none"><h2 id="poshead">Open trade</h2><div class="pos"><div><b id="p-entry">—</b><span>entry</span></div><div><b id="p-stop">—</b><span>stop</span></div><div><b id="p-target">—</b><span>target</span></div></div></div>
+    <div class="card" id="poscard" style="display:none"><h2 id="poshead">Open trade</h2><div class="pos"><div><b id="p-entry">—</b><span>filled</span></div><div><b id="p-stop">—</b><span>stop</span></div><div><b id="p-target">—</b><span>margin</span></div></div></div>
     <div class="card" style="flex:1;min-height:0;display:flex;flex-direction:column"><h2>On chain · tap any line to verify</h2><ul class="feed" id="feed"></ul></div>
-    <div class="ghost" id="ghost3">policy check + fill<small>one transaction</small></div>
+    <div class="ghost" id="ghost3">ask → fill → receipt<small>one contract</small></div>
   </section>
 
   <section class="screen" id="s4">
-    <h1>Back to Coinbase</h1>
-    <p class="sub">Your money only ever goes to you.</p>
+    <h1>Revoked</h1>
+    <p class="sub">One tap. Your money never left Coinbase.</p>
     <div style="display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:6px;margin-top:10px;position:relative">
-      <div class="card" style="margin:0;text-align:center"><h2>Coinbase</h2><div class="big" style="font-size:24px" id="cb2">$0</div><div class="note">USDC on Base</div></div>
-      <div style="text-align:center;font-size:26px;color:var(--accent)">←</div>
-      <div class="card" style="margin:0;text-align:center"><h2>NEAR</h2><div class="big" style="font-size:24px" id="wd">$5,757</div><div class="note">alice</div></div>
-      <div class="coin" id="coin2" style="left:60px;top:46px">$</div>
+      <div class="card" style="margin:0;text-align:center"><h2>Coinbase</h2><div class="big" style="font-size:24px" id="cb2">$5,757</div><div class="note">yours, where it was</div></div>
+      <div style="text-align:center;font-size:26px;color:var(--down)">✕</div>
+      <div class="card" style="margin:0;text-align:center"><h2>The Machine</h2><div class="big" style="font-size:24px" id="wd">$10</div><div class="note">$5 per call · on NEAR</div></div>
     </div>
     <div class="card"><h2>The Machine · public record</h2><div class="big" id="rec2" style="font-size:34px">—</div><div class="bar" id="bar2"></div><div class="note">Every call locked before the move, graded after. Misses included. <a id="reclink" href="record.html" style="color:var(--accent)">Check it →</a></div></div>
     <button class="btn ghost" id="b4">Done</button>
-    <div class="ghost" id="ghost4">Chain abstraction<small>Base → NEAR → Base, one account</small></div>
+    <div class="ghost" id="ghost4">Agent economy<small>any agent, paid per call, graded in public</small></div>
   </section>
 </div>
 
@@ -185,6 +185,7 @@ const RPCS = q.get('rpc') ? [q.get('rpc')] : ['https://test.rpc.fastnear.com', '
 const CONTRACT = q.get('contract') || 'app.tape-nvibe.testnet';
 const MEMBER = q.get('member') || 'alice.tape-nvibe.testnet';
 const AGENT = q.get('agent') || 'machine.tape-nvibe.testnet';
+const COINBASE = Number(q.get('coinbase') || 5000) * 1e6;   // what she connected; the chain carries every change to it
 const EXPLORER = 'https://testnet.nearblocks.io/txns/';
 const $ = (id) => document.getElementById(id);
 const usd = (v) => '$' + (Number(v) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -252,19 +253,18 @@ const ghost = (id, ms = 2600) => { const g = $(id); if (!g) return; g.classList.
 function feedLine(e) {
   const d = e.data || {};
   switch (e.event) {
-    case 'deposit': return [`${usd(d.amount)} arrived via NEAR Intents`];
-    case 'granted': return [`You hired The Machine — rules on chain, keys with you`];
+    case 'deposit': return [`${usd(d.amount)} of fees arrived via NEAR Intents`];
+    case 'granted': return [`You hired The Machine — your rules on chain, your money on Coinbase`];
     case 'revoked': return [`You revoked The Machine`];
     case 'committed': return [`The Machine locks a call (${String(d.side).toLowerCase()}) before the move`];
     case 'revealed': return null;
-    case 'bought': return null;
-    case 'opened': return [`${d.qty} ct ${String(d.side).toLowerCase()} at ${px(d.px)} with ${usd(d.collateral)} of your money`];
-    case 'target': return [`Target hit at ${px(d.px)} · +${usd(Number(d.pnl) - Number(d.fee))}`, 'good'];
-    case 'stop': return [`Stop hit at ${px(d.px)} · ${usd(Number(d.pnl) - Number(d.fee))}`, 'bad'];
-    case 'closed': return [`Closed at ${px(d.px)}`];
+    case 'bought': return [`Paid ${usd(d.price)} for the call`];
+    case 'asked': return [`Chain clears the order: ${d.qty} ct ${String(d.side).toLowerCase()} · ${usd(d.collateral)} margin · stop ${px(d.stop)}`];
+    case 'filled': return d.kind === 'Open' ? [`Coinbase fills at ${px(d.px)} · receipt on chain`]
+                                           : [`Closed at ${px(d.px)} on Coinbase · ${Number(d.pnl) >= 0 ? '+' : '−'}${usd(Math.abs(Number(d.pnl)))}`, Number(d.pnl) >= 0 ? 'good' : 'bad'];
     case 'graded': return [`Graded ${d.outcome} · ${px(d.px_entry)} → ${px(d.px_4h)} · levels now public`, d.outcome === 'Right' ? 'good' : 'bad'];
     case 'frozen': return [`Frozen: your money is under the line you set`, 'bad'];
-    case 'refused': return [`REFUSED ON CHAIN: ${d.code}`, 'bad'];
+    case 'refused': return [`REFUSED ON CHAIN: ${d.code} — no order went to Coinbase`, 'bad'];
     case 'withdraw': return [`Withdrawn ${usd(d.amount)} — to you`];
     default: return null;
   }
@@ -272,14 +272,15 @@ function feedLine(e) {
 
 async function tick() {
   try {
-    const [acct, grant, rec5, events, poss] = await Promise.all([
+    const [acct, grant, rec5, events] = await Promise.all([
       view('account', { owner: MEMBER }), view('grant_of', { owner: MEMBER, agent: AGENT }),
-      view('record', { agent: AGENT, window_n: 5 }), view('recent', { n: 80 }), view('positions_of', { owner: MEMBER })]);
-    if (ts0 === null) ts0 = events.length ? Math.max(...events.map(e => Number(e.ts))) : 0;
+      view('record', { agent: AGENT, window_n: 5 }), view('recent', { n: 80 })]);
+    if (ts0 === null) ts0 = q.get('from') ? Number(q.get('from')) : (events.length ? Math.max(...events.map(e => Number(e.ts))) : 0);
     // `recent` is newest first. Her night = everything from her deposit on (and only her account's lines)
     const fresh = events.filter(e => Number(e.ts) > ts0);
     const depIdx = fresh.map(e => e.event).lastIndexOf('deposit');
-    const mine = (depIdx < 0 ? [] : fresh.slice(0, depIdx + 1)).filter(e => !e.data || ((!e.data.owner || e.data.owner === MEMBER) && (!e.data.member || e.data.member === MEMBER)));
+    const mine = (depIdx < 0 ? [] : fresh.slice(0, depIdx + 1)).filter(e => !e.data || ((!e.data.owner || e.data.owner === MEMBER) && (!e.data.member || e.data.member === MEMBER)))
+      ;
     const has = (k) => mine.some(e => e.event === k);
     // record
     const bars = async () => {
@@ -297,9 +298,9 @@ async function tick() {
     // screens
     const dep = mine.find(e => e.event === 'deposit');
     if (dep && !pressed.b1) {
-      deposit = Number(dep.data.amount); press('b1');
+      deposit = COINBASE; press('b1');
       const coin = $('coin'); coin.style.setProperty('--dx', '250px'); coin.classList.add('go');
-      setTimeout(() => { $('cb').textContent = '$0'; $('bal1').textContent = usd(deposit); $('bal1').classList.add('bump'); $('arr').textContent = 'arrived via NEAR Intents'; ghost('ghost1'); }, 1400);
+      setTimeout(() => { $('bal1').textContent = usd(dep.data.amount); $('bal1').classList.add('bump'); $('arr').textContent = 'fees arrived via NEAR Intents'; ghost('ghost1'); }, 1400);
     }
     if (dep && screen < 2) setTimeout(() => show(2), 4200);
     if (has('granted') && screen < 3 && !pressed.b2) {
@@ -308,10 +309,11 @@ async function tick() {
     }
     if (has('revoked') && screen < 4 && !pressed.b4) { pressed.b4 = true; setTimeout(() => show(4), 2500); }
     // live
-    const locked = Number(acct.locked), bal = Number(acct.balance);
-    const equity = bal + locked;
+    // her Coinbase balance: the chain carries it on every ask and receipt
+    const lastMoney = mine.find(e => (e.event === 'filled' || e.event === 'asked') && e.data.equity);
+    const equity = lastMoney ? Number(lastMoney.data.equity) : COINBASE;
     if ($('eq').textContent !== usd(equity)) { $('eq').textContent = usd(equity); $('eq').classList.remove('bump'); void $('eq').offsetWidth; $('eq').classList.add('bump'); }
-    if (has('opened') && !pressed.g3) { pressed.g3 = true; ghost('ghost3'); }
+    if (has('filled') && !pressed.g3) { pressed.g3 = true; ghost('ghost3'); }
     const d = equity - deposit;
     if (deposit) { $('dl').textContent = `${d >= 0 ? '+' : '−'}${usd(Math.abs(d))} since you hired it`; $('dl').className = 'delta ' + (d >= 0 ? 'up' : 'down'); }
     const refused = mine.find(e => e.event === 'refused');
@@ -320,10 +322,14 @@ async function tick() {
     if (refused) $('ban').textContent = `REFUSED ON CHAIN: ${refused.data.code} — nothing moves. She was asleep.`;
     $('st').innerHTML = acct.frozen ? 'FROZEN <span class="moon">🌙</span>' : (grant && !grant.revoked ? 'THE MACHINE IS TRADING' : 'REVOKED');
     $('st').className = 'pill ' + (acct.frozen ? 'bad' : 'ok');
-    const p = poss[0];
+    // the open trade: the last ask whose ticket has an open receipt and no close yet
+    const lastAsk = mine.find(e => e.event === 'asked');
+    const fills = lastAsk ? mine.filter(e => e.event === 'filled' && e.data.ticket === lastAsk.data.ticket) : [];
+    const openFill = fills.find(f => f.data.kind === 'Open'), closed = fills.some(f => f.data.kind === 'Close');
+    const p = lastAsk && openFill && !closed;
     $('poscard').style.display = p ? '' : 'none';
-    if (p) { $('p-entry').textContent = px(p.p.entry_px); $('p-stop').textContent = p.p.stop_px ? px(p.p.stop_px) : '—'; $('p-target').textContent = p.p.target_px ? px(p.p.target_px) : '—';
-             $('poshead').textContent = `Open trade · ${p.p.side} ${p.p.qty} ct · ${usd(p.p.collateral)}`; }
+    if (p) { $('p-entry').textContent = px(openFill.data.px); $('p-stop').textContent = px(lastAsk.data.stop); $('p-target').textContent = usd(lastAsk.data.collateral);
+             $('poshead').textContent = `Open on Coinbase · ${lastAsk.data.side} ${lastAsk.data.qty} ct`; }
     const ul = $('feed'); ul.innerHTML = '';
     for (const e of mine) {
       const l = feedLine(e); if (!l) continue;
@@ -331,9 +337,9 @@ async function tick() {
       const a = li.lastChild; a.textContent = l[0]; if (e.tx) a.href = EXPLORER + e.tx; else a.href = `https://testnet.nearblocks.io/address/${CONTRACT}`;
       ul.appendChild(li);
     }
-    const wd = mine.find(e => e.event === 'withdraw');
-    if (wd && !pressed.wd) { pressed.wd = true; const amt = usd(wd.data.amount); $('wd').textContent = amt;
-      setTimeout(() => { const c = $('coin2'); c.style.setProperty('--dx', '250px'); c.classList.add('back'); setTimeout(() => { $('cb2').textContent = amt; $('wd').textContent = '$0.00'; ghost('ghost4'); }, 1400); }, 2800); }
+    if (has('revoked') && !pressed.wd) { pressed.wd = true; $('cb2').textContent = usd(equity);
+      const paid = mine.filter(e => e.event === 'bought').reduce((a, e) => a + Number(e.data.price), 0); $('wd').textContent = usd(paid);
+      setTimeout(() => ghost('ghost4', 3000), 2800); }
   } catch (err) { console.warn(err); }
 }
 (async () => {   // the intro bars first, before the first full tick
@@ -353,10 +359,10 @@ tick(); setInterval(tick, 2500);
     if (!from || !to) return;
     const r = await fetch(base + '/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
       dry: true, swapType: 'EXACT_INPUT', slippageTolerance: 100, originAsset: from.assetId, depositType: 'ORIGIN_CHAIN', destinationAsset: to.assetId,
-      amount: String(100 * 10 ** from.decimals), refundTo: '0x000000000000000000000000000000000000dEaD', refundType: 'ORIGIN_CHAIN',
+      amount: String(20 * 10 ** from.decimals), refundTo: '0x000000000000000000000000000000000000dEaD', refundType: 'ORIGIN_CHAIN',
       recipient: 'near', recipientType: 'DESTINATION_CHAIN', deadline: new Date(Date.now() + 3600e3).toISOString() }) });
     const qq = (await r.json()).quote || {};
-    if (qq.amountOut) { $('iq').textContent = `${(Number(qq.amountOut) / 10 ** to.decimals).toFixed(2)} USDC on NEAR`; if (qq.timeEstimate) $('iq-t').textContent = `about ${qq.timeEstimate} s`; }
+    if (qq.amountOut && qq.timeEstimate) $('iq-t').textContent = `about ${qq.timeEstimate} s`;
   } catch (e) { /* the quote is a convenience */ }
 })();
 </script>

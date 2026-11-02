@@ -1,28 +1,34 @@
 # Tape
 
-**Verifiable intelligence for the agent economy.**
-Where agents trade, and prove it — and where you can give an agent your money, not your keys.
+**Hire an AI trader on chain. Your money stays where you trade.**
 
-Soon AI agents will trade, hire and pay each other. Nothing tells you which ones to trust with money, and today you either hand an agent your keys or approve every move yourself. Tape fixes both on NEAR:
+Soon AI agents will trade, hire and pay each other. Nothing tells you which ones to trust with money, and today you either
+hand an agent your keys or approve every move yourself. In the US you cannot even pay one per trade: builder codes on
+Hyperliquid are closed to US persons. Tape is the rail, on NEAR:
 
-- **`calls`** — an agent's call is locked on chain (a hash) before the market moves, revealed to the people who pay for it, and graded on chain four hours later. The record is public; nobody can edit it — not the agent, not us.
-- **`guard`** — the agent wallet. Your USDC stays yours. The agent gets a policy, not your keys: markets, size, leverage, a stop on every order, a freeze when your balance falls too far, a gate on its own graded record, every trade tied to a published call, one-tap revoke, and money out only to you. Refusals are on chain, with the reason.
-- **`venue`** — oracle-priced perps on NEAR where the agent's trades land, with venue-held stops and targets and the same margin rules as a regulated exchange.
+- **The record (`calls`)** — an agent's call is locked on chain (a hash) before the market moves, sold to the members who
+  pay for it, and graded on chain four hours later. Public; nobody can edit it — not the agent, not us.
+- **Pay per call** — $5 in USDC, on chain, from a small fee float that arrives through NEAR Intents. Any agent can list;
+  any member — or any other agent — can pay. That is the agent economy, and it scales because every payment, ask and
+  receipt is one cheap NEAR transaction.
+- **Your rules on chain (`guard`)** — your money never leaves your own exchange account (Coinbase, under a trade-only key).
+  The agent gets a policy, not your keys: Coinbase's margin, a stop on every order, a freeze when your balance falls too far,
+  a gate on its own graded record, every trade tied to a published call, one-tap revoke. Before any order goes to Coinbase
+  the agent **asks** the chain; the same policy engine answers; a refusal is an event with its code. After Coinbase fills,
+  the **receipt** lands on chain. The record of every ask, fill and refusal is public.
 
-The first agent is **The Machine**. Its first markets are NEAR, ZEC and BTC. Funding comes from any chain through NEAR Intents.
+The first agent is **The Machine**. Its first markets are NEAR, ZEC and BTC.
 
 ## See it
 
-Three taps. **Add funds** from Coinbase (any network — NEAR Intents brings it to NEAR). **Hire The Machine** — its record, what it
-sees, and your rules. **Watch** — it trades your money inside your rules, and every line on screen is a NEAR transaction.
-Then **Back to Coinbase**: your money only ever goes to you.
+Three taps. **Connect Coinbase** — your money stays there; $20 of fees come to NEAR through Intents. **Hire The Machine** —
+its record, what it sees, your rules, $5 a call. **Watch** — it asks the chain, Coinbase fills, the receipt lands; every
+line on screen is a NEAR transaction. Then **Revoke**: one tap, and your money never moved.
 
-**What lives where.** On NEAR: the member's funding (Intents), the agent's pay per call, the policy wallet and the graded
-record. The perps venue in this repo is a testnet demo of where the agent's trades land when the fill is on chain. In
-production, execution happens where the member is allowed to trade — a US member's own Coinbase account (the same margin
-rules the policy shows), Hyperliquid elsewhere — and the policy wallet applies wherever the fill is on chain, including the
-Bitnomial/HIP-3 markets coming to the US. Builder codes on Hyperliquid are closed to US persons; NEAR is the rail where a
-US member can hire, pay and limit an agent on chain.
+**What lives where.** On NEAR: the fee float (Intents), the pay per call, the member's rules, every ask, every fill's
+receipt, every refusal, and the graded record. On Coinbase: the member's money and the fills, under a trade-only API key.
+We do not offer US perps on NEAR. (`contracts/venue`, an oracle-priced perps core, is kept for markets where the fill
+itself can be on chain; the demo does not use it.)
 
 - **The page:** `docs/index.html` (GitHub Pages) — a phone-sized flow that reads the contract live on NEAR testnet
   ([`app.tape-nvibe.testnet`](https://testnet.nearblocks.io/address/app.tape-nvibe.testnet)); `docs/record.html` is the public record.
@@ -38,21 +44,23 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/release
 make test
 ```
 
-`make demo` replays the recorded night on a local NEAR sandbox and narrates it, step by step (`make demo-testnet` plays the
-same story on the testnet deployment). `make unit` checks every rule in plain Rust (venue, guard, calls). `make e2e` builds the contracts and runs the whole story on a
-local NEAR sandbox — see `contracts/tape/tests/e2e.rs`:
+`make demo` replays the recorded day on a local NEAR sandbox and narrates it, step by step (`make demo-testnet` plays the
+same story on the testnet deployment). The runner stands in for Coinbase — filling at the recorded price under the same
+margin model — and for The Machine's server, which asks the chain before every order and posts every receipt. `make unit`
+checks every rule in plain Rust (calls, guard, venue). `make e2e` builds the contracts and runs the whole story on a local
+NEAR sandbox — see `contracts/tape/tests/e2e.rs`:
 
-- **The demo beat** — Alice deposits $5,000 and pays The Machine $5 for a call. She gives it a policy, not her keys: NEAR only,
-  2.0x, a stop on every order, freeze at −15%, a record of at least 55% over its last 3 graded calls, every trade tied to a
-  published call. It opens on its call; the stop is hit; a second call, a second stop. Her balance is $4,075.43 — under 85% of
-  her $5,000 peak — so the third order is **refused on chain: FROZEN**, and nothing moves. She revokes and withdraws to herself;
-  The Machine keeps only the $5 she paid it.
-- **Scope, money, refusals** — the agent cannot close her own positions or anyone else's, cannot withdraw her money, and every
-  refusal is an on-chain event with its code.
-- **The record** — commit, reveal, buy, grade; the levels go on chain only at the grade and must hash to the commit made
-  before the move; a forged grade is rejected.
-- **The venue** — a position liquidated by a keeper below maintenance; every dollar the contract holds is someone's balance,
-  someone's collateral, or the pool.
+- **Her money stays on Coinbase (G_15)** — Alice's $20 fee float arrives; she pays $5 for a call and grants The Machine her
+  rules. It asks the chain: 2 contracts at 3.99 on $2,000 margin, stop 3.80, her Coinbase equity $5,000 — allowed, a ticket.
+  Only it can post the receipt, and the same order ref only once. The close receipt carries +$454.54 and her equity after.
+  A second ask on the same call is refused (once per owner). She revokes: the next ask is REVOKED. The only money of hers on
+  chain is what she paid; The Machine withdraws exactly that and not a cent more.
+- **The night (G_16)** — two losing closes put her at $4,075.43, under 85% of her $5,000 peak; the third ask is **refused on
+  chain: FROZEN** before any order exists. Only she unfreezes.
+- **The record (C_10)** — commit, reveal, buy, grade; the levels go on chain only at the grade and must hash to the commit
+  made before the move; a forged grade is rejected.
+- **The on-chain venue (G_11–14, V_14)** — the earlier design, kept and still tested: positions on NEAR, a keeper
+  liquidation, every dollar reconciled.
 
 In demo mode the keeper replays a recorded day: each price carries its recorded time, and that is the contract's clock — so
 "graded four hours after the reveal" is measured on the replayed day. Live, the clock is block time and the price is Pyth's.
@@ -60,13 +68,13 @@ In demo mode the keeper replays a recorded day: each price carries its recorded 
 ## Layout
 
 ```
-contracts/calls   commit → reveal → buy → grade; the record guard reads
-contracts/guard   the agent wallet: policy engine + owner-only funds
-contracts/venue   oracle-priced perps: margin, stops/targets, liquidation
-contracts/tape    the NEAR contract: the three above in one, so the guard's check and the fill are one transaction
+contracts/calls   commit → reveal → buy → grade → fill refs; the record guard reads
+contracts/guard   the policy engine (ask) + the owner-only fee float
+contracts/venue   oracle-priced perps core (margin model; the on-chain-fill option, not used by the demo)
+contracts/tape    the NEAR contract: the record, the rules, asks, receipts, the fee float — one contract
 contracts/usdc-mock  a test USDC (NEP-141) for the sandbox
-docs/index.html   the app page: live view of the contract on testnet, plus a live NEAR Intents quote for adding funds
-demo/             `make demo`: the recorded night (day.json) played and narrated, on a sandbox or on testnet
+docs/index.html   the app page: the three-tap flow, read live from the contract on testnet
+demo/             `make demo`: day.json / night.json played and narrated, on a sandbox or on testnet
 SPEC.md           every rule and every test, written before the code
 ```
 
@@ -77,13 +85,13 @@ Coinbase's margin (42%, at most 2.4x) · a stop on every trade · stops itself a
 record is ≥ 55% of its last 5 · every trade on a published call.
 
 **`demo/day.json` — Oct 30, the day after.** The two calls are The Machine's registered BTC 24h open-interest reads that day
-(the stop and target levels are the demo's). Alice deposits $5,000 at 00:31. Call 1 (01:01, long 3.99): target 4.30 hit at
-06:31 → $5,454.54. Call 2 (17:01, long 4.29): target 4.50 hit the next afternoon → **$5,757.13**. Both graded Right four
-hours after the reveal. She withdraws to herself.
+(the stop and target levels are the demo's). Alice connects Coinbase with $5,000 at 00:31. Call 1 (01:01, long 3.99): the
+chain clears the order, Coinbase fills, target 4.30 hit at 06:31 → $5,454.54. Call 2 (17:01, long 4.29): target 4.50 hit
+the next afternoon → **$5,757.13**. Both graded Right four hours after the reveal. She revokes; her money never moved.
 
 **`demo/night.json` — Oct 29, the night.** Scripted calls, the night the rules did their job: two stops take her from $5,000
-to $4,309.53, under her −10% line; the third order is **refused on chain: FROZEN**. That call is graded Right four hours
-later — the freeze kept her out of a third loss and out of the bounce, and the record shows both.
+to $4,309.53, under her −10% line; the third ask is **refused on chain: FROZEN** — no order goes to Coinbase. That call is
+graded Right four hours later — the freeze kept her out of a third loss and out of the bounce, and the record shows both.
 
 `make demo` plays `day.json` on a local sandbox; `make demo-testnet` plays it on testnet; add `night.json` for the night.
 
