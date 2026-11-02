@@ -208,11 +208,15 @@ async fn fill(e: &Env, by: &Account, ticket: u64, order_ref: &str, kind: &str, p
 async fn g15_her_money_stays_on_coinbase_the_chain_holds_the_rules_the_asks_and_the_receipts() -> anyhow::Result<()> {
     let e = setup().await?;
     seed_record(&e).await?;
-    // she pays $5 for the call; nothing else of hers is on chain
+    // a $20 fee float is all of hers that comes to NEAR; she pays $5 for the call from it
+    fund(&e, &e.alice, 20 * D, "deposit").await?;
     let (a, _) = call_out(&e, "Long", r#""entry":3.99,"stop":3.80,"target":4.30"#).await?;
-    fund(&e, &e.alice, 5 * D, &format!("buy:{a}")).await?;
+    e.alice.call(e.tape.id(), "buy").args_json(json!({"id": a})).transact().await?.into_result()?;
+    assert_eq!(view(&e, "has_bought", json!({"member": e.alice.id(), "id": a})).await?, json!(true));
+    assert_eq!(u(&view(&e, "account", json!({"owner": e.alice.id()})).await?["balance"]), 15 * D);
+    assert_eq!(u(&view(&e, "account", json!({"owner": e.machine.id()})).await?["balance"]), 5 * D);
+    assert!(e.bob.call(e.tape.id(), "buy").args_json(json!({"id": a})).transact().await?.is_failure(), "bought with no float");
     e.alice.call(e.tape.id(), "grant").args_json(json!({"agent": e.machine.id(), "policy": policy()})).transact().await?.into_result()?;
-    assert_eq!(u(&view(&e, "account", json!({"owner": e.alice.id()})).await?["balance"]), 0);
 
     // the ask: 2 contracts (1,000 NEAR) at 3.99 = $3,990 on $2,000 collateral (2.0x), stop 3.80, her Coinbase equity $5,000
     let r = ask(&e, a, 2, 2_000 * D, 3_990 * D, Some(3_800_000), 5_000 * D).await?;

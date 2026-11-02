@@ -156,6 +156,25 @@ impl Tape {
         PromiseOrValue::Value(U128(amount))
     }
 
+    /// Pay for a call from your own fee float on the contract: the price goes to the call's agent.
+    pub fn buy(&mut self, id: u64) {
+        let member = env::predecessor_account_id();
+        let (agent, price) = match self.book.buy(member.as_str(), id) {
+            Ok(Some(p)) => p,
+            Ok(None) => return,                                            // already bought
+            Err(e) => env::panic_str(&format!("{e:?}")),
+        };
+        let mut a = self.acct(&member);
+        require!(a.balance >= price, "not enough on your float");
+        a.balance -= price;
+        self.accounts.insert(member.clone(), a);
+        let agent: AccountId = agent.parse().unwrap();
+        let mut g = self.acct(&agent);
+        g.balance += price;
+        self.accounts.insert(agent.clone(), g);
+        self.emit("bought", near_sdk::serde_json::json!({"member": member, "call": id, "agent": agent, "price": price.to_string()}));
+    }
+
     /// Only your own free balance, only to you.
     #[payable]
     pub fn withdraw(&mut self, amount: U128) -> Promise {

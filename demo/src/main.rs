@@ -192,9 +192,10 @@ async fn main() -> Result<()> {
     let mkt = tape_venue::Market::near();
     let mut cash = m["coinbase"].as_u64().unwrap() as u128;          // her Coinbase cash, micro-USD
     c.price(m["at"].as_u64().unwrap(), px_at(&prices, m["at"].as_u64().unwrap())).await?;
+    let l = c.deposit(&c.alice, 4 * price, "deposit").await?;
     println!("  ── the day ─────────────────────────────────────────────────────────────");
-    println!("  {}  Alice connects Coinbase: ${:.2} there, a trade-only key — it can trade, it cannot withdraw.", hhmm(m["at"].as_u64().unwrap()), cash as f64 / D);
-    println!("               $20 of fees to NEAR via Intents, so she can pay The Machine per call.");
+    println!("  {}  Alice connects Coinbase: ${:.2} stays there, under a trade-only key — it can trade, it cannot withdraw.", hhmm(m["at"].as_u64().unwrap()), cash as f64 / D);
+    println!("               $20 of fees come to NEAR via Intents, so she can pay The Machine per call   {l}");
     let mut hired = false;
 
     // 3. The calls, the asks, the Coinbase fills, their receipts, the refusal
@@ -249,7 +250,7 @@ async fn main() -> Result<()> {
                 println!("  {}  Alice hires The Machine — her rules on chain, her money on Coinbase: Coinbase's margin rules · a stop on every trade ·", hhmm(ts));
                 println!("               stops itself at −10% · only while its record is above 55% · every trade on a published call   {l}");
             }
-            let l = c.deposit(&c.alice, price, &format!("buy:{id}")).await?;
+            let (_, l) = c.call(&c.alice, &c.tape.clone(), "buy", json!({"id": id}), 0).await?;
             println!("               Alice pays $5 for it and sees the levels: stop {:.2}, target {:.2}   {l}", stop as f64 / D, target as f64 / D);
             // the ask: before any order goes to Coinbase, the chain clears it under her rules
             let fill = tape_venue::fill_px(&mkt, px, long);
