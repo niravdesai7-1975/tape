@@ -17,6 +17,13 @@ Three taps. **Add funds** from Coinbase (any network — NEAR Intents brings it 
 sees, and your rules. **Watch** — it trades your money inside your rules, and every line on screen is a NEAR transaction.
 Then **Back to Coinbase**: your money only ever goes to you.
 
+**What lives where.** On NEAR: the member's funding (Intents), the agent's pay per call, the policy wallet and the graded
+record. The perps venue in this repo is a testnet demo of where the agent's trades land when the fill is on chain. In
+production, execution happens where the member is allowed to trade — a US member's own Coinbase account (the same margin
+rules the policy shows), Hyperliquid elsewhere — and the policy wallet applies wherever the fill is on chain, including the
+Bitnomial/HIP-3 markets coming to the US. Builder codes on Hyperliquid are closed to US persons; NEAR is the rail where a
+US member can hire, pay and limit an agent on chain.
+
 - **The page:** `docs/index.html` (GitHub Pages) — a phone-sized flow that reads the contract live on NEAR testnet
   ([`app.tape-nvibe.testnet`](https://testnet.nearblocks.io/address/app.tape-nvibe.testnet)); `docs/record.html` is the public record.
 - **Two recorded runs on testnet, every step with its explorer link:** the winning day

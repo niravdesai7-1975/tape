@@ -39,6 +39,10 @@ https://nearhackathon.com/HACKATHON.md — tracks used: `security`, `agents` (le
    contract. The page is a viewer: the taps you see are the member's own transactions landing (the demo runner signs them
    with her testnet key); `docs/record.html` is the public record.
 
+What lives where: on NEAR, the funding (Intents), the agent's pay per call, the policy wallet and the graded record; the
+perps venue here is a testnet demo — in production a US member's fills land in her own Coinbase account under the same
+margin rules, and the policy wallet applies wherever the fill is on chain. We do not offer US perps on NEAR.
+
 The prices are real (NEAR, Oct 29–31, 2026). The Oct 30 calls are The Machine's registered reads that day; the Oct 29 calls
 are scripted. NEAR Intents has no testnet, so the page shows a live mainnet dry-run quote for adding funds (nothing moves)
 and the demo funds Alice with test USDC. Face ID is a button.

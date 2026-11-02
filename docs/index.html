@@ -104,6 +104,19 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
       <p class="sub" style="margin-top:18px">Every call: locked before, graded after.</p>
       <p class="sub" id="intro-c" style="opacity:0;transition:opacity 1.2s;color:var(--text)">Built by an ex-Bridgewater trading engineer.<br>Live since August 2026.</p>
     </div>
+    <div id="intro-w" style="display:none">
+      <div class="note" style="margin:20px 0 10px">Why NEAR</div>
+      <div class="card" style="margin-top:0"><h2 style="color:var(--down)">Before</h2>
+        <div class="rule"><i style="background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down)">✕</i><div>Builder codes on Hyperliquid<small>closed to the US</small></div></div>
+        <div class="rule"><i style="background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down)">✕</i><div>Hand it your keys, or approve every trade</div></div>
+      </div>
+      <div class="card"><h2 style="color:var(--up)">On NEAR</h2>
+        <div class="rule"><i>✓</i><div>Fund from Coinbase<small>NEAR Intents</small></div></div>
+        <div class="rule"><i>✓</i><div>Pay the agent on chain</div></div>
+        <div class="rule"><i>✓</i><div>A key that can only trade<small>function-call key</small></div></div>
+        <div class="rule"><i>✓</i><div>Every call checked on chain</div></div>
+      </div>
+    </div>
     <div id="intro-d" style="display:none">
       <div class="fid" id="fid">☺</div>
       <h1 class="center" style="font-size:28px">Alice</h1>
@@ -203,9 +216,11 @@ let introB = 0, barsReady = false, ranB = false;
 function runB() {
   if (ranB || !introB || !barsReady) return; ranB = true;
   setTimeout(() => { $('intro-c').style.opacity = 1; }, 4000);
-  setTimeout(() => { $('intro-b').style.display = 'none'; $('intro-d').style.display = ''; }, 8000);
-  setTimeout(() => { $('fid').classList.add('ok'); $('fid').textContent = '✓'; ghost('ghost0', 2200); }, 9700);
-  setTimeout(() => { show(1); }, 12500);
+  setTimeout(() => { $('intro-b').style.display = 'none'; $('intro-w').style.display = ''; }, 8000);
+  setTimeout(() => { [...document.querySelectorAll('#intro-w .rule')].forEach((r, i) => { r.style.opacity = 0; r.style.transition = 'opacity .4s'; setTimeout(() => r.style.opacity = 1, 200 + 650 * i); }); }, 8000);
+  setTimeout(() => { $('intro-w').style.display = 'none'; $('intro-d').style.display = ''; }, 15000);
+  setTimeout(() => { $('fid').classList.add('ok'); $('fid').textContent = '✓'; ghost('ghost0', 2200); }, 16700);
+  setTimeout(() => { show(1); }, 19500);
 }
 const ghost = (id, ms = 2600) => { const g = $(id); if (!g) return; g.classList.add('on'); setTimeout(() => g.classList.remove('on'), ms); };
 (() => {
