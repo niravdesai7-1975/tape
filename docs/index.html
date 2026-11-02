@@ -59,19 +59,36 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 </head>
 <body>
 <div class="phone">
-  <div class="top"><b>Tape</b><span id="net">testnet</span></div>
+  <div class="top"><b>The Machine</b><span id="net">testnet</span></div>
   <div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i></div>
 
   <section class="screen on" id="s0">
-    <div class="faceid">☺</div>
-    <h1 class="center">Give an agent your money,<br>not your keys.</h1>
-    <p class="sub center">AI that trades for you — inside rules the chain enforces, with a record you can check.</p>
-    <button class="btn" id="b0">Continue with Face ID</button>
+    <div id="intro-a">
+      <div class="note" style="margin:30px 0 8px">A member's balance</div>
+      <div class="big" id="count" style="font-size:54px">$5,000.00</div>
+      <svg id="spark" viewBox="0 0 376 120" width="100%" height="120" style="margin-top:18px"><path id="sparkp" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round"/></svg>
+      <p class="sub" style="margin-top:10px">Oct 30. One day. Every step on chain.</p>
+    </div>
+    <div id="intro-b" style="display:none">
+      <div class="note" style="margin:30px 0 8px">The Machine · last ten calls</div>
+      <div class="bar" id="bar0" style="height:34px;gap:6px"></div>
+      <p class="sub" style="margin-top:18px">Every call: locked before, graded after.</p>
+      <p class="sub" id="intro-c" style="opacity:0;transition:opacity 1.2s;color:var(--text)">Built by an ex-Bridgewater trading engineer.<br>Live since August 2026.</p>
+    </div>
+    <div id="intro-d" style="display:none">
+      <div class="note" style="margin:30px 0 8px">A member</div>
+      <div style="display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:6px;margin-top:40px">
+        <div class="card" style="margin:0;text-align:center"><h2>Coinbase</h2><div class="big" style="font-size:26px">USDC</div><div class="note">on Base</div></div>
+        <div style="text-align:center;font-size:28px;color:var(--accent)">→</div>
+        <div class="card" style="margin:0;text-align:center"><h2>NEAR</h2><div class="big" style="font-size:26px">alice</div><div class="note">her account</div></div>
+      </div>
+      <p class="sub" style="margin-top:30px">Here's how a member uses it.</p>
+    </div>
+    <button class="btn" id="b0" style="visibility:hidden">Continue with Face ID</button>
   </section>
-
   <section class="screen" id="s1">
     <h1>Add funds</h1>
-    <p class="sub">Send USDC from Coinbase. Any network — NEAR Intents brings it here.</p>
+    <p class="sub">USDC from Coinbase, on any chain. NEAR Intents brings it to your NEAR account.</p>
     <div class="card"><h2>From Coinbase · USDC on Base</h2><div class="addr" id="addr"></div>
       <div class="row"><span>Arrives in</span><b id="iq-t">about a minute</b></div>
       <div class="row"><span>100 USDC on Base becomes</span><b id="iq">— USDC on NEAR</b></div></div>
@@ -81,7 +98,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 
   <section class="screen" id="s2">
     <h1>The Machine</h1>
-    <p class="sub">An AI trader. Every call locked on chain before the move, graded four hours later.</p>
+    <p class="sub">Hire it. Rules on chain, keys with you — it can trade, never withdraw.</p>
     <div class="card"><h2>Record · last 5 graded calls</h2><div class="big" id="rec" style="font-size:34px">—</div><div class="bar" id="bar"></div></div>
     <div class="card"><h2>What it sees right now</h2><div id="read" style="font-size:15px">—</div></div>
     <div class="card"><h2>Your rules</h2>
@@ -104,7 +121,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 
   <section class="screen" id="s4">
     <h1>Back to Coinbase</h1>
-    <p class="sub">Your money only ever goes to you.</p>
+    <p class="sub">Your money only ever goes to you. NEAR Intents takes it back to Base.</p>
     <div class="card"><h2>Withdrawn</h2><div class="big" id="wd">$0.00</div><div class="note" id="wdn">USDC on NEAR → USDC on Base, via NEAR Intents</div></div>
     <div class="card"><h2>The Machine · public record</h2><div class="big" id="rec2" style="font-size:34px">—</div><div class="bar" id="bar2"></div><div class="note">Every call locked before the move, graded after. Misses included. <a id="reclink" href="record.html" style="color:var(--accent)">Check it →</a></div></div>
     <button class="btn ghost" id="b4">Done</button>
@@ -142,7 +159,21 @@ function show(n) {
   document.querySelectorAll('#dots i').forEach((d, i) => d.classList.toggle('on', i <= n));
 }
 function press(id) { if (pressed[id]) return; pressed[id] = true; const b = $(id); b.classList.add('pressed'); setTimeout(() => b.classList.remove('pressed'), 450); }
-setTimeout(() => { press('b0'); setTimeout(() => show(1), 500); }, 2600);
+// the opening: the number, the record, the builder, then the member — 20 s, then tap one
+const SPARK = [4.048, 4.013, 3.984, 4.029, 4.022, 3.997, 4.056, 4.081, 4.08, 4.131, 4.149, 4.177, 4.212, 4.269, 4.258, 4.182, 4.294, 4.293, 4.286, 4.256, 4.292, 4.35, 4.309, 4.339, 4.313, 4.363, 4.357, 4.326, 4.343, 4.326, 4.311, 4.316, 4.3, 4.271, 4.245, 4.276, 4.27, 4.328, 4.378, 4.325, 4.301, 4.33, 4.288, 4.272, 4.27, 4.259, 4.265, 4.245, 4.279, 4.288, 4.346, 4.293, 4.298, 4.294, 4.345, 4.313, 4.308, 4.309, 4.291, 4.314, 4.283, 4.332, 4.341, 4.372, 4.366, 4.343, 4.366, 4.35, 4.312, 4.315, 4.297, 4.309, 4.276, 4.281, 4.308, 4.321, 4.34, 4.354, 4.353, 4.3, 4.321, 4.322, 4.34, 4.324, 4.33, 4.314, 4.312, 4.316, 4.325, 4.324, 4.337, 4.38, 4.421, 4.425, 4.404, 4.406, 4.436, 4.438, 4.428, 4.462, 4.468, 4.501, 4.51];
+(() => {
+  const W = 376, H = 120, lo = Math.min(...SPARK), hi = Math.max(...SPARK);
+  const pts = SPARK.map((v, i) => [i * W / (SPARK.length - 1), H - 6 - (v - lo) / (hi - lo) * (H - 12)]);
+  const path = $('sparkp'); path.setAttribute('d', 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L'));
+  const len = 1200; path.style.strokeDasharray = len; path.style.strokeDashoffset = len; path.style.transition = 'stroke-dashoffset 4.5s ease-out';
+  const t0 = performance.now(), from = 5000, to = 5757.13;
+  const step = (now) => { const k = Math.min(1, (now - t0) / 4500); const e = 1 - Math.pow(1 - k, 3); $('count').textContent = '$' + (from + (to - from) * e).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); if (k < 1) requestAnimationFrame(step); };
+  setTimeout(() => { path.style.strokeDashoffset = 0; requestAnimationFrame(step); }, 600);
+  setTimeout(() => { $('intro-a').style.display = 'none'; $('intro-b').style.display = ''; }, 6500);
+  setTimeout(() => { $('intro-c').style.opacity = 1; }, 11000);
+  setTimeout(() => { $('intro-b').style.display = 'none'; $('intro-d').style.display = ''; }, 16000);
+  setTimeout(() => { show(1); }, 20000);
+})();
 
 function feedLine(e) {
   const d = e.data || {};
@@ -152,7 +183,7 @@ function feedLine(e) {
     case 'revoked': return [`You revoked The Machine`];
     case 'committed': return [`The Machine locks a call (${String(d.side).toLowerCase()}) before the move`];
     case 'revealed': return null;
-    case 'bought': return [`Call bought for ${usd(d.price)}`];
+    case 'bought': return null;
     case 'opened': return [`${d.qty} ct ${String(d.side).toLowerCase()} at ${px(d.px)} with ${usd(d.collateral)} of your money`];
     case 'target': return [`Target hit at ${px(d.px)} · +${usd(Number(d.pnl) - Number(d.fee))}`, 'good'];
     case 'stop': return [`Stop hit at ${px(d.px)} · ${usd(Number(d.pnl) - Number(d.fee))}`, 'bad'];
@@ -182,6 +213,8 @@ async function tick() {
       const calls = (await Promise.all(ids.map(id => view('call', { id }).catch(() => null)))).filter(Boolean).filter(c => c.grade).sort((a, b) => a.grade.ts - b.grade.ts).slice(-5);
       const html = calls.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join('');
       $('bar').innerHTML = html; $('bar2').innerHTML = html;
+      const ten = (await Promise.all(ids.slice(0, 10).map(id => view('call', { id }).catch(() => null)))).filter(Boolean).filter(c => c.grade).sort((a, b) => a.grade.ts - b.grade.ts).slice(-10);
+      $('bar0').innerHTML = ten.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join('');
     };
     await bars();
     $('rec').textContent = `${rec5[1]} of ${rec5[0]} right`; $('rec2').textContent = `${rec5[1]} of ${rec5[0]} right`;
