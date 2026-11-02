@@ -15,7 +15,7 @@ oracle freshness.
 | `record(agent, window_n)` = (graded calls in the last window, how many right); flat counts in n, not in right | C_05/C_11 |
 | A public chain hides nothing: buyers are recorded (`has_bought`) and the app serves them the levels off chain; the levels go on chain only at the grade | C_06 |
 | An open (ungraded) hash cannot be committed again | C_07 |
-| The venue attaches its fill id to a call it was traded on | C_08 |
+| The venue, or the call's own agent, attaches a fill ref to a call; the same ref is not attached twice | C_08, C_08b |
 | End to end on chain: buy pays the agent, an early or forged grade is rejected, the levels publish at the grade | C_10 (`e2e.rs`) |
 
 ## `guard` — the agent wallet
@@ -43,6 +43,21 @@ stop (none / wrong side / farther than the owner's max) → call → record.**
 
 Refusal codes: REVOKED, FROZEN, MARKET, SIZE, COLLATERAL, LEVERAGE, EXPOSURE, NO_STOP, STOP_SIDE, STOP_FAR, CALL, RECORD.
 
+### The member's money stays where she trades (Coinbase)
+
+The product: her $5,000 never leaves her own Coinbase account; The Machine trades it there through a trade-only API key.
+NEAR holds her rules, the pay per call, and the record of every ask, fill and refusal. Before any order goes to Coinbase
+the agent **asks** the chain, reporting her venue equity; the chain answers with the same policy engine (`guard::check`),
+and the answer is an event. After the venue fills, the agent posts the **receipt**. A close receipt carries the P&L and her
+equity after it, which drives the freeze — a condition on her money, not a clock.
+
+| Rule | Test |
+|---|---|
+| `ask` runs the whole policy on the reported order (revoked → frozen → … → record); an allowed ask is a ticket, a refused one an event with its code; nothing else happens | G_15 (`e2e.rs`) |
+| `fill` posts a receipt against a ticket: only the ticket's agent, only once per (venue, order ref); an open fill attaches the call; a close fill records P&L and marks equity, which can freeze her | G_15, G_16 |
+| Revoke ends it: the next ask is REVOKED; the only money on chain is what she paid the agent, and the agent withdraws only that | G_15 |
+| The night: after two losing closes her equity is under her freeze line; the third ask is refused on chain, FROZEN, before any order exists | G_16 |
+
 ## `venue` — oracle-priced perps
 
 NEAR market as Coinbase margins it: 500 NEAR per contract, 0.001 tick, 42% initial margin on the oracle notional,
@@ -67,7 +82,8 @@ max(tick, 1 bp) rounded to the tick against the taker. Counterparty: an operator
 
 ## Demo (`make demo`, one recorded day)
 
-1. A call locks on chain. 2. A member funds $5,000 via Intents and buys it. 3. She gives The Machine a policy — NEAR only,
-2.0x, stop required, freeze at −15%, record ≥ 55% of the last 30, every trade on a published call. 4. The Machine opens
-on its call; the replay hits the stop. 5. A second loss trips the freeze; The Machine's next order is refused on chain:
-FROZEN. 6. The grade lands; the public record updates; she revokes and withdraws to herself.
+1. A call locks on chain. 2. A member connects Coinbase (trade-only key), tops up $20 of fees via Intents and buys the call
+for $5. 3. She gives The Machine her rules — Coinbase's margin, a stop on every order, freeze at −10%, record ≥ 55% of
+the last 5, every trade on a published call. 4. The Machine asks the chain; allowed; the Coinbase fill's receipt lands;
+the target hits; the close receipt lands with the P&L. 5. The night: two losing closes put her under her line; the third
+ask is refused on chain: FROZEN. 6. The grade lands; the record updates; she revokes; the Machine withdraws its $5 per call.

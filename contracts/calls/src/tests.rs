@@ -118,6 +118,19 @@ fn c08_the_venue_attaches_a_fill() {
 }
 
 #[test]
+fn c08b_the_agent_attaches_its_own_venue_fill_once_per_ref() {
+    // the member's money trades off chain (her Coinbase account); the agent posts the fill's receipt against its call
+    let mut b = book();
+    let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();
+    assert_eq!(b.filled("eve", id, "coinbase:o-1"), Err(CallError::NotAgent));
+    assert_eq!(b.filled("machine", id, "coinbase:o-1"), Ok(()));
+    assert_eq!(b.filled("machine", id, "coinbase:o-1"), Err(CallError::Duplicate));
+    assert_eq!(b.filled("venue", id, "venue:7"), Ok(()));                      // the on-chain venue may too
+    assert_eq!(b.calls[0].fills, vec!["coinbase:o-1".to_string(), "venue:7".to_string()]);
+    assert_eq!(b.filled("machine", 99, "x"), Err(CallError::NoSuchCall));
+}
+
+#[test]
 fn c03b_an_empty_allowlist_is_open_to_everyone() {
     let mut b = Book::new("grader", "venue", &[], 10);
     let id = b.commit("machine", &hash_hex(PAYLOAD), "NEAR", Side::Long, 5_000_000, 1_000).unwrap();

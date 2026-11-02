@@ -188,6 +188,91 @@ async fn g14_the_demo_beat() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The agent asks the chain before an order goes to her Coinbase account, reporting her venue equity.
+async fn ask(e: &Env, id: u64, qty: u32, collateral: u128, notional: u128, stop: Option<u64>, equity: u128) -> anyhow::Result<Value> {
+    Ok(e.machine.call(e.tape.id(), "ask")
+        .args_json(json!({"owner": e.alice.id(), "market": "NEAR", "side": "Long", "qty": qty, "collateral": collateral.to_string(),
+                          "notional": notional.to_string(), "stop_px": stop, "call_id": id, "equity": equity.to_string()}))
+        .max_gas().transact().await?.json()?)
+}
+
+/// The receipt of a Coinbase fill, posted against the ticket the ask returned.
+async fn fill(e: &Env, by: &Account, ticket: u64, order_ref: &str, kind: &str, px: u64, pnl: Option<i128>, equity: u128) -> anyhow::Result<near_workspaces::result::ExecutionFinalResult> {
+    Ok(by.call(e.tape.id(), "fill")
+        .args_json(json!({"owner": e.alice.id(), "ticket": ticket, "venue": "coinbase", "order_ref": order_ref, "kind": kind, "px": px,
+                          "pnl": pnl.map(|p| p.to_string()), "equity": equity.to_string()}))
+        .max_gas().transact().await?)
+}
+
+#[tokio::test]
+async fn g15_her_money_stays_on_coinbase_the_chain_holds_the_rules_the_asks_and_the_receipts() -> anyhow::Result<()> {
+    let e = setup().await?;
+    seed_record(&e).await?;
+    // she pays $5 for the call; nothing else of hers is on chain
+    let (a, _) = call_out(&e, "Long", r#""entry":3.99,"stop":3.80,"target":4.30"#).await?;
+    fund(&e, &e.alice, 5 * D, &format!("buy:{a}")).await?;
+    e.alice.call(e.tape.id(), "grant").args_json(json!({"agent": e.machine.id(), "policy": policy()})).transact().await?.into_result()?;
+    assert_eq!(u(&view(&e, "account", json!({"owner": e.alice.id()})).await?["balance"]), 0);
+
+    // the ask: 2 contracts (1,000 NEAR) at 3.99 = $3,990 on $2,000 collateral (2.0x), stop 3.80, her Coinbase equity $5,000
+    let r = ask(&e, a, 2, 2_000 * D, 3_990 * D, Some(3_800_000), 5_000 * D).await?;
+    let t = r["ticket"].as_u64().expect("allowed");
+    assert!(r["refused"].is_null());
+    // only the agent that asked may post the receipt, and the same order ref only once
+    assert!(fill(&e, &e.bob, t, "o-1", "Open", 3_990_000, None, 5_000 * D).await?.is_failure());
+    fill(&e, &e.machine, t, "o-1", "Open", 3_990_000, None, 5_000 * D).await?.into_result()?;
+    assert!(fill(&e, &e.machine, t, "o-1", "Open", 3_990_000, None, 5_000 * D).await?.is_failure(), "a receipt posted twice");
+    // the target hits on Coinbase: the close receipt carries the P&L and her equity after it
+    fill(&e, &e.machine, t, "o-2", "Close", 4_300_000, Some(454_540_000), 5_454_540_000).await?.into_result()?;
+    let recent = view(&e, "recent", json!({"n": 4})).await?;
+    assert_eq!(recent[0]["event"], json!("filled"));
+    assert_eq!(recent[0]["data"]["kind"], json!("Close"));
+    assert_eq!(recent[0]["data"]["pnl"], json!("454540000"));
+    assert_eq!(recent[2]["event"], json!("asked"));
+    assert_eq!(view(&e, "call", json!({"id": a})).await?["fills"], json!(["coinbase:o-1"]));
+    // a second ask on the same call is refused: once per owner
+    assert_eq!(ask(&e, a, 2, 2_000 * D, 3_990 * D, Some(3_800_000), 5_454_540_000).await?["refused"], json!("CALL"));
+    // she revokes; the next ask is REVOKED; the agent withdraws only what she paid it
+    e.alice.call(e.tape.id(), "revoke").args_json(json!({"agent": e.machine.id()})).transact().await?.into_result()?;
+    let (b, _) = call_out(&e, "Long", r#""entry":4.29,"stop":4.10,"target":4.50"#).await?;
+    assert_eq!(ask(&e, b, 2, 2_000 * D, 4_290 * D, Some(4_100_000), 5_454_540_000).await?["refused"], json!("REVOKED"));
+    e.machine.call(e.tape.id(), "withdraw").args_json(json!({"amount": (5 * D).to_string()})).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?.into_result()?;
+    assert_eq!(usdc_of(&e, e.machine.id()).await?, 5 * D);
+    assert!(e.machine.call(e.tape.id(), "withdraw").args_json(json!({"amount": "1"})).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?.is_failure());
+    Ok(())
+}
+
+#[tokio::test]
+async fn g16_the_night_two_losing_closes_then_the_third_ask_is_refused_frozen() -> anyhow::Result<()> {
+    let e = setup().await?;
+    seed_record(&e).await?;
+    e.alice.call(e.tape.id(), "grant").args_json(json!({"agent": e.machine.id(), "policy": policy()})).transact().await?.into_result()?;
+    let mut eq = 5_000 * D;
+    for (i, (entry, stop, loss)) in [(4_861_000u64, 4_500_000u64, 417_586_000u128), (4_401_000, 3_950_000, 506_980_000)].iter().enumerate() {
+        let (c, _) = call_out(&e, "Long", &format!(r#""entry":{entry},"stop":{stop}"#)).await?;
+        let t = ask(&e, c, 2, 2_500 * D, *entry as u128 * 1_000, Some(*stop), eq).await?["ticket"].as_u64().expect("allowed");
+        fill(&e, &e.machine, t, &format!("o-{i}a"), "Open", *entry, None, eq).await?.into_result()?;
+        eq -= loss;
+        fill(&e, &e.machine, t, &format!("o-{i}b"), "Close", *stop, Some(-(*loss as i128)), eq).await?.into_result()?;
+    }
+    assert_eq!(eq, 4_075_434_000);                                                // under 85% of her $5,000 peak
+    let (c, _) = call_out(&e, "Long", r#""entry":3.901,"stop":3.70"#).await?;
+    let r = ask(&e, c, 2, 2_000 * D, 3_901 * D, Some(3_700_000), eq).await?;
+    assert_eq!(r["refused"], json!("FROZEN"));
+    assert!(r["ticket"].is_null());
+    let recent = view(&e, "recent", json!({"n": 5})).await?;                   // refused · revealed · committed · filled · frozen
+    assert_eq!(recent[0]["event"], json!("refused"));
+    assert_eq!(recent[0]["data"]["code"], json!("FROZEN"));
+    assert_eq!(recent[4]["event"], json!("frozen"));
+    assert_eq!(view(&e, "account", json!({"owner": e.alice.id()})).await?["frozen"], json!(true));
+    // only she unfreezes, and the peak resets to where her money is
+    let _ = e.machine.call(e.tape.id(), "unfreeze_at").args_json(json!({"equity": eq.to_string()})).transact().await?;
+    assert_eq!(view(&e, "account", json!({"owner": e.alice.id()})).await?["frozen"], json!(true));
+    e.alice.call(e.tape.id(), "unfreeze_at").args_json(json!({"equity": eq.to_string()})).transact().await?.into_result()?;
+    assert!(ask(&e, c, 2, 2_000 * D, 3_901 * D, Some(3_700_000), eq).await?["ticket"].is_u64());
+    Ok(())
+}
+
 #[tokio::test]
 async fn g11_g12_g13_scope_money_and_refusal_events() -> anyhow::Result<()> {
     let e = setup().await?;

@@ -24,6 +24,8 @@ pub struct Call {
     pub id: u64, pub agent: String, pub market: String, pub side: Side, pub commit_hash: String, pub commit_ts: u64,
     pub price: u128, pub reveal_ts: Option<u64>, pub payload: Option<String>, pub grade: Option<Grade>,
     pub fill_id: Option<String>,
+    /// Receipts of fills on this call, "<venue>:<order ref>" — the on-chain venue's or the agent's own (her Coinbase account).
+    pub fills: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, borsh::BorshSerialize, borsh::BorshDeserialize, serde::Serialize, serde::Deserialize)]
@@ -71,7 +73,7 @@ impl Book {
         }
         let id = self.calls.len() as u64;
         self.calls.push(Call { id, agent: agent.to_string(), market: market.to_string(), side, commit_hash: hash.to_string(),
-                               commit_ts: now, price, reveal_ts: None, payload: None, grade: None, fill_id: None });
+                               commit_ts: now, price, reveal_ts: None, payload: None, grade: None, fill_id: None, fills: Vec::new() });
         Ok(id)
     }
     /// Only the call's agent, once: the moment the call goes out to paying members. Nothing readable goes on chain.
@@ -136,6 +138,19 @@ impl Book {
         }
         let c = self.calls.get_mut(id as usize).ok_or(CallError::NoSuchCall)?;
         c.fill_id = Some(fill_id.to_string());
+        Ok(())
+    }
+    /// The call's agent (or the venue) attaches a fill's receipt; the same ref never twice.
+    pub fn filled(&mut self, caller: &str, id: u64, fill_ref: &str) -> Result<(), CallError> {
+        let venue = self.venue.clone();
+        let c = self.calls.get_mut(id as usize).ok_or(CallError::NoSuchCall)?;
+        if c.agent != caller && caller != venue {
+            return Err(CallError::NotAgent);
+        }
+        if c.fills.iter().any(|f| f == fill_ref) {
+            return Err(CallError::Duplicate);
+        }
+        c.fills.push(fill_ref.to_string());
         Ok(())
     }
     fn bought(&self, member: &str, id: u64) -> bool {

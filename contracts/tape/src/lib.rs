@@ -43,6 +43,19 @@ pub struct OpenResult { pub position: Option<u64>, pub refused: Option<String> }
 #[derive(Clone, Debug)]
 pub struct Grant { pub policy: guard::Policy, pub revoked: bool }
 
+/// An allowed ask: the order the chain cleared before it went to the member's own venue (her Coinbase account).
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug)]
+pub struct Ticket { pub id: u64, pub owner: AccountId, pub agent: AccountId, pub call_id: Option<u64>, pub side: Side,
+                    pub notional: u128, pub collateral: u128, pub open: bool, pub refs: Vec<String> }
+
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FillKind { Open, Close }
+
+#[near(serializers = [json])]
+pub struct AskResult { pub ticket: Option<u64>, pub refused: Option<String> }
+
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Tape {
@@ -59,6 +72,8 @@ pub struct Tape {
     next_pos: u64,
     pool: u128,
     events: Vec<String>,
+    tickets: IterableMap<u64, Ticket>,
+    next_ticket: u64,
 }
 
 const RECENT: usize = 100; // newest events kept in state for the app
@@ -75,6 +90,7 @@ impl Tape {
             book: calls::Book::new(grader.as_str(), me.as_str(), &[], 10),
             accounts: LookupMap::new(b"a"), grants: LookupMap::new(b"g"), used_calls: LookupMap::new(b"u"),
             positions: IterableMap::new(b"p"), next_pos: 0, pool: 0, events: Vec::new(),
+            tickets: IterableMap::new(b"t"), next_ticket: 0,
         }
     }
 
@@ -241,6 +257,75 @@ impl Tape {
         self.settle(position_id, &x, s, None, "closed")
     }
 
+    // ---------- her money stays where she trades: asks and receipts ----------
+
+    /// Before any order goes to the owner's own venue (her Coinbase account), the agent asks the chain, reporting her
+    /// venue equity. The same policy engine answers; a refusal is an event with its code and nothing else happens.
+    #[allow(clippy::too_many_arguments)]
+    pub fn ask(&mut self, owner: AccountId, market: String, side: Side, qty: u32, collateral: U128, notional: U128,
+               stop_px: Option<u64>, call_id: Option<u64>, equity: U128) -> AskResult {
+        let agent = env::predecessor_account_id();
+        let Some(grant) = self.grants.get(&(owner.clone(), agent.clone())).cloned() else {
+            self.refuse(&owner, &agent, "REVOKED"); return AskResult { ticket: None, refused: Some("REVOKED".into()) } };
+        let frozen = self.mark(&owner, equity.0, grant.policy.drawdown_freeze_bp);
+        let exposure: u128 = self.tickets.values().filter(|t| t.owner == owner && t.agent == agent && t.open).map(|t| t.notional).sum();
+        let (n, right) = self.book.record(agent.as_str(), grant.policy.window_n);
+        let cv = call_id.and_then(|id| self.book.calls.get(id as usize)).map(|c| guard::CallView {
+            id: c.id, agent: c.agent.clone(), market: c.market.clone(), side: if c.side == calls::Side::Long { guard::Side::Long } else { guard::Side::Short },
+            revealed: c.reveal_ts.is_some(), graded: c.grade.is_some() });
+        let used = call_id.map(|id| self.used_calls.contains_key(&(owner.clone(), id))).unwrap_or(false);
+        let fill_px = if notional.0 > 0 && qty > 0 { (notional.0 * 1_000_000 / (qty as u128 * self.market.contract_size as u128)) as u64 } else { 0 };
+        let order = guard::Order { market: market.clone(), side: side.g(), qty, collateral: collateral.0, notional: notional.0, fill_px, stop_px, call_id };
+        let ctx = guard::Ctx { agent: agent.as_str(), revoked: grant.revoked, frozen, open_exposure: exposure,
+                               record: guard::Record { n, right }, call: cv.as_ref(), call_used_by_owner: used };
+        if let Err(r) = guard::check(&grant.policy, &order, &ctx) {
+            self.refuse(&owner, &agent, code(r));
+            return AskResult { ticket: None, refused: Some(code(r).to_string()) };
+        }
+        let id = self.next_ticket;
+        self.next_ticket += 1;
+        self.tickets.insert(id, Ticket { id, owner: owner.clone(), agent: agent.clone(), call_id, side, notional: notional.0, collateral: collateral.0, open: false, refs: Vec::new() });
+        if let Some(c) = call_id { self.used_calls.insert((owner.clone(), c), true); }
+        self.emit("asked", near_sdk::serde_json::json!({"ticket": id, "owner": owner, "agent": agent, "call": call_id, "market": market, "side": side,
+            "qty": qty, "notional": notional.0.to_string(), "collateral": collateral.0.to_string(), "stop": stop_px, "equity": equity.0.to_string()}));
+        AskResult { ticket: Some(id), refused: None }
+    }
+
+    /// The receipt of a fill on the owner's venue, against the ticket the ask returned. Only the agent that asked, once
+    /// per order ref. A close carries the P&L and her equity after it, which is what can freeze her.
+    #[allow(clippy::too_many_arguments)]
+    pub fn fill(&mut self, owner: AccountId, ticket: u64, venue: String, order_ref: String, kind: FillKind, px: u64, pnl: Option<String>, equity: U128) {
+        let agent = env::predecessor_account_id();
+        let mut t = self.tickets.get(&ticket).cloned().unwrap_or_else(|| env::panic_str("no such ticket"));
+        require!(t.owner == owner && t.agent == agent, "not this agent's ticket for this owner");
+        let fill_ref = format!("{venue}:{order_ref}");
+        require!(!self.tickets.values().any(|x| x.refs.iter().any(|r| *r == fill_ref)), "duplicate receipt");
+        t.refs.push(fill_ref.clone());
+        if let (Some(c), FillKind::Open) = (t.call_id, kind) {
+            self.book.filled(agent.as_str(), c, &fill_ref).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
+        }
+        match kind {
+            FillKind::Open => { require!(!t.open, "already open"); t.open = true; }
+            FillKind::Close => { require!(t.open, "nothing open on this ticket"); t.open = false; }
+        }
+        self.tickets.insert(ticket, t);
+        let g = self.grants.get(&(owner.clone(), agent.clone())).cloned();
+        if kind == FillKind::Close { if let Some(g) = g { self.mark(&owner, equity.0, g.policy.drawdown_freeze_bp); } }
+        self.emit("filled", near_sdk::serde_json::json!({"ticket": ticket, "owner": owner, "agent": agent, "venue": venue, "ref": order_ref,
+            "kind": kind, "px": px, "pnl": pnl, "equity": equity.0.to_string()}));
+    }
+
+    /// The owner unfreezes, resetting the peak to where her money is now.
+    pub fn unfreeze_at(&mut self, equity: U128) {
+        let owner = env::predecessor_account_id();
+        let mut a = self.acct(&owner);
+        a.unfreeze(owner.as_str(), equity.0).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
+        self.accounts.insert(owner.clone(), a);
+        self.emit("unfrozen", near_sdk::serde_json::json!({"owner": owner, "equity": equity.0.to_string()}));
+    }
+
+    pub fn ticket(&self, id: u64) -> Option<Ticket> { self.tickets.get(&id).cloned() }
+
     // ---------- the venue (direct use, keepers) ----------
 
     pub fn open(&mut self, market: String, side: Side, qty: u32, collateral: U128, stop_px: Option<u64>, target_px: Option<u64>) -> u64 {
@@ -315,6 +400,17 @@ impl Tape {
         log!("EVENT_JSON:{}", e);
         self.events.push(e);
         if self.events.len() > RECENT { self.events.remove(0); }
+    }
+
+    /// Mark the owner's equity against her peak; the freeze is a condition on money. Returns whether she is frozen.
+    fn mark(&mut self, owner: &AccountId, equity: u128, freeze_bp: u32) -> bool {
+        let mut a = self.acct(owner);
+        let was = a.frozen;
+        a.mark(equity, freeze_bp);
+        if a.frozen && !was { self.emit("frozen", near_sdk::serde_json::json!({"owner": owner, "equity": equity.to_string(), "peak": a.peak.to_string()})); }
+        let f = a.frozen;
+        self.accounts.insert(owner.clone(), a);
+        f
     }
 
     fn refuse(&mut self, owner: &AccountId, agent: &AccountId, code: &str) -> OpenResult {
