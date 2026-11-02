@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tape</title>
+<meta name="description" content="Give an agent your money, not your keys. Live from the Tape contract on NEAR testnet.">
+<style>
+:root{--bg:#0d0f13;--card:#161a21;--line:#252b35;--text:#e8ecf2;--dim:#8b95a5;--up:#3fcf8e;--down:#ff5c5c;--warn:#f5b84b;--accent:#7aa2ff}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f6f7f9;--card:#fff;--line:#e3e6eb;--text:#12161c;--dim:#5d6672;--up:#11865a;--down:#d12f2f;--warn:#a86a00;--accent:#2f5bd8}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 small{font-weight:500;color:var(--dim);font-size:15px;margin-left:8px}
+.net{font-size:12px;color:var(--dim)}
+.net a{color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px}
+.big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums;color:var(--dim);font-size:13px}
+.row b{color:var(--text);font-weight:600}
+.chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.4px}
+.chip.ok{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
+.chip.bad{background:color-mix(in srgb,var(--down) 18%,transparent);color:var(--down)}
+.chip.dim{background:var(--line);color:var(--dim)}
+.policy{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.policy span{border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px}
+.bar{display:flex;gap:4px;margin:8px 0 4px}
+.bar i{flex:1;height:10px;border-radius:3px;background:var(--line)}
+.bar i.R{background:var(--up)}.bar i.W{background:var(--down)}.bar i.F{background:var(--dim)}
+.feed{list-style:none;margin:0;padding:0;max-height:420px;overflow:auto}
+.feed li{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.feed li:first-child{border-top:0}
+.feed time{color:var(--dim);font-variant-numeric:tabular-nums}
+.feed .refused{color:var(--down);font-weight:700}
+.feed .good{color:var(--up)}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+td,th{padding:6px 4px;border-top:1px solid var(--line);text-align:left}
+th{color:var(--dim);font-weight:600;border-top:0}
+.R{color:var(--up)}.W{color:var(--down)}
+.hash{font-family:ui-monospace,Menlo,monospace;color:var(--dim)}
+.wide{grid-column:1/-1}
+#intents .big{font-size:22px}
+@media (max-width:520px){.big{font-size:26px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tape <small>Give an agent your money, not your keys.</small></h1>
+    <div class="net" id="net"></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Alice</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="big" id="bal">—</div><span class="chip dim" id="state">—</span></div>
+      <div class="row"><span>Peak</span><b id="peak">—</b></div>
+      <div class="row"><span>Freeze line</span><b id="line">—</b></div>
+      <div class="row"><span>In positions</span><b id="locked">—</b></div>
+    </section>
+
+    <section class="card">
+      <h2>The Machine</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="big" id="rec">—</div><span class="chip dim" id="grant">—</span></div>
+      <div class="bar" id="bar"></div>
+      <div class="policy" id="policy"></div>
+    </section>
+
+    <section class="card wide">
+      <h2>On chain, newest first</h2>
+      <ul class="feed" id="feed"></ul>
+    </section>
+
+    <section class="card wide">
+      <h2>Calls</h2>
+      <table><thead><tr><th>#</th><th>Side</th><th>Locked</th><th>Grade</th><th>Entry → 4h</th><th>Levels (public after the grade)</th></tr></thead><tbody id="calls"></tbody></table>
+    </section>
+
+    <section class="card wide" id="intents" hidden>
+      <h2>Add funds from any chain — NEAR Intents, live quote</h2>
+      <div class="big" id="iq">—</div>
+      <div class="row"><span id="iqs"></span></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const q = new URLSearchParams(location.search);
+const NET = q.get('network') || 'testnet';
+const RPCS = q.get('rpc') ? [q.get('rpc')] : NET === 'mainnet' ? ['https://rpc.mainnet.fastnear.com', 'https://rpc.mainnet.near.org']
+  : ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
+let rpcAt = 0;
+const CONTRACT = q.get('contract') || 'app.tape-nvibe.testnet';
+const MEMBER = q.get('member') || 'alice.tape-nvibe.testnet';
+const AGENT = q.get('agent') || 'machine.tape-nvibe.testnet';
+const $ = (id) => document.getElementById(id);
+const usd = (v) => '$' + (Number(v) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const px = (v) => (Number(v) / 1e6).toFixed(4);
+const hhmm = (ts) => { const s = Number(ts) % 86400; return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0'); };
+const NAMES = { alice: 'Alice', machine: 'The Machine', keeper: 'the keeper', grader: 'the grader' };
+const short = (a) => { const n = String(a || '').replace('.tape-nvibe.testnet', ''); return NAMES[n] || n; };
+$('net').innerHTML = `${NET} · <a href="https://${NET === 'mainnet' ? '' : 'testnet.'}nearblocks.io/address/${CONTRACT}" target="_blank" rel="noopener">${CONTRACT}</a>`;
+
+async function view(method, args = {}, tries = 0) {
+  const RPC = RPCS[rpcAt % RPCS.length];
+  const r = await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+    jsonrpc: '2.0', id: 1, method: 'query',
+    params: { request_type: 'call_function', finality: 'optimistic', account_id: CONTRACT, method_name: method, args_base64: btoa(JSON.stringify(args)) } }) });
+  const j = await r.json().catch(() => ({}));
+  if (!j.result || !j.result.result) {
+    if (tries < RPCS.length && (!r.ok || !j.result)) { rpcAt++; return view(method, args, tries + 1); }   // throttled: the other server
+    throw new Error(method + ': ' + JSON.stringify(j.error || j.result));
+  }
+  return JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result)));
+}
+
+function line(e) {
+  const d = e.data || {};
+  switch (e.event) {
+    case 'deposit': return [`${short(d.owner)} deposits ${usd(d.amount)}`];
+    case 'granted': return [`${short(d.owner)} gives ${short(d.agent)} a policy, not her keys`];
+    case 'revoked': return [`${short(d.owner)} revokes ${short(d.agent)}`];
+    case 'committed': return [`${short(d.agent)} locks call #${d.id} (${String(d.side).toLowerCase()}) — hash ${String(d.hash).slice(0, 10)}…`];
+    case 'revealed': return [`call #${d.id} goes out to paying members`];
+    case 'bought': return [`${short(d.member)} pays ${usd(d.price)} for call #${d.call}`];
+    case 'opened': return [`${short(d.by)} opens ${d.qty} ct ${String(d.side).toLowerCase()} at ${px(d.px)} with ${usd(d.collateral)} of ${short(d.owner)}'s money`];
+    case 'stop': return [`stop hit at ${px(d.px)} — ${short(d.owner)} gets back ${usd(d.to_owner)}`, 'refused'];
+    case 'target': return [`target hit at ${px(d.px)} — ${short(d.owner)} gets back ${usd(d.to_owner)}`, 'good'];
+    case 'closed': return [`closed at ${px(d.px)} — ${usd(d.to_owner)} back`];
+    case 'liquidated': return [`liquidated at ${px(d.px)}`, 'refused'];
+    case 'graded': return [`call #${d.id} graded ${d.outcome} — ${px(d.px_entry)} → ${px(d.px_4h)}; levels now public`, d.outcome === 'Right' ? 'good' : d.outcome === 'Wrong' ? 'refused' : ''];
+    case 'frozen': return [`${short(d.owner)} is frozen: equity ${usd(d.equity)} under the line from a ${usd(d.peak)} peak`, 'refused'];
+    case 'refused': return [`REFUSED ON CHAIN: ${d.code} — ${short(d.agent)} cannot trade ${short(d.owner)}'s money`, 'refused'];
+    case 'withdraw': return [`${short(d.owner)} withdraws ${usd(d.amount)} — only ever to the owner`];
+    default: return [e.event];
+  }
+}
+
+let seen = new Set(), callIds = new Set();
+async function tick() {
+  try {
+    const [acct, grant, rec5, events] = await Promise.all([
+      view('account', { owner: MEMBER }), view('grant_of', { owner: MEMBER, agent: AGENT }),
+      view('record', { agent: AGENT, window_n: 5 }), view('recent', { n: 60 })]);
+    const pol = grant && grant.policy;
+    $('bal').textContent = usd(acct.balance);
+    $('peak').textContent = usd(acct.peak);
+    $('locked').textContent = usd(acct.locked);
+    $('line').textContent = pol ? usd(Number(acct.peak) * (1 - pol.drawdown_freeze_bp / 1e4)) : '—';
+    $('state').textContent = acct.frozen ? 'FROZEN' : 'ACTIVE';
+    $('state').className = 'chip ' + (acct.frozen ? 'bad' : 'ok');
+    $('rec').textContent = `${rec5[1]} of ${rec5[0]} right`;
+    $('grant').textContent = !grant ? 'NO GRANT' : grant.revoked ? 'REVOKED' : 'GRANTED';
+    $('grant').className = 'chip ' + (!grant || grant.revoked ? 'dim' : 'ok');
+    if (pol) $('policy').innerHTML = [pol.markets.join(' · '), `≤ ${(pol.max_leverage_x10 / 10).toFixed(1)}x`, pol.stop_required ? 'stop on every order' : 'stop optional',
+      `freeze −${pol.drawdown_freeze_bp / 100}%`, `record ≥ ${pol.min_right_bp / 100}% of ${pol.window_n}`, pol.require_call ? 'only on published calls' : 'any trade'].map(t => `<span>${t}</span>`).join('');
+    // the feed
+    const ul = $('feed'); ul.innerHTML = '';
+    for (const e of events) {
+      const [txt, cls] = line(e);
+      const li = document.createElement('li');
+      li.innerHTML = `<time>${hhmm(e.ts)}</time><span class="${cls || ''}"></span>`;
+      li.lastChild.textContent = txt;
+      ul.appendChild(li);
+      if (e.event === 'committed') callIds.add(e.data.id);
+    }
+    // the record bar and the calls
+    const ids = [...callIds].sort((a, b) => b - a).slice(0, 10);
+    const calls = (await Promise.all(ids.map(id => view('call', { id }).catch(() => null)))).filter(Boolean);
+    const graded = calls.filter(c => c.grade).sort((a, b) => a.grade.ts - b.grade.ts).slice(-5);
+    $('bar').innerHTML = graded.map(c => `<i class="${c.grade.outcome[0]}" title="#${c.id} ${c.grade.outcome}"></i>`).join('');
+    $('calls').innerHTML = calls.map(c => {
+      const g = c.grade, lv = c.payload ? JSON.parse(c.payload) : null;
+      return `<tr><td>${c.id}</td><td>${c.side}</td><td>${hhmm(c.commit_ts)} <span class="hash">${c.commit_hash.slice(0, 8)}…</span></td>
+        <td class="${g ? g.outcome[0] : ''}">${g ? g.outcome : '—'}</td><td>${g ? px(g.px_entry) + ' → ' + px(g.px_4h) : '—'}</td>
+        <td>${lv ? `stop ${lv.stop} · target ${lv.target}` : '<span class="hash">sealed until the grade</span>'}</td></tr>`;
+    }).join('');
+  } catch (err) { console.warn(err); }
+}
+tick(); setInterval(tick, 5000);
+
+// NEAR Intents: a live, dry-run quote — no funds move. Fund from USDC on Base into USDC on NEAR.
+(async () => {
+  try {
+    const base = 'https://1click.chaindefuser.com/v0';
+    const toks = await (await fetch(base + '/tokens')).json();
+    const find = (chain) => toks.find(t => t.symbol === 'USDC' && t.blockchain === chain);
+    const from = find('base'), to = find('near');
+    if (!from || !to) return;
+    const amount = String(100 * 10 ** from.decimals);
+    const r = await fetch(base + '/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+      dry: true, swapType: 'EXACT_INPUT', slippageTolerance: 100, originAsset: from.assetId, depositType: 'ORIGIN_CHAIN',
+      destinationAsset: to.assetId, amount, refundTo: '0x000000000000000000000000000000000000dEaD', refundType: 'ORIGIN_CHAIN',
+      recipient: 'near', recipientType: 'DESTINATION_CHAIN', deadline: new Date(Date.now() + 3600e3).toISOString() }) });
+    const j = await r.json(); const qq = j.quote || {};
+    if (!qq.amountOut) return;
+    $('iq').textContent = `100 USDC on Base → ${(Number(qq.amountOut) / 10 ** to.decimals).toFixed(2)} USDC on NEAR`;
+    $('iqs').textContent = `about ${qq.timeEstimate ?? '—'} s · mainnet dry run, nothing moves`;
+    $('intents').hidden = false;
+  } catch (e) { /* the quote is a convenience; the page works without it */ }
+})();
+</script>
+</body>
+</html>
