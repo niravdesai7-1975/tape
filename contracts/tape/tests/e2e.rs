@@ -169,6 +169,11 @@ async fn g14_the_demo_beat() -> anyhow::Result<()> {
     let r = agent_open(&e, c, 2_000 * D, 3_700_000, None).await?;
     assert_eq!(r["refused"], json!("FROZEN"));
     assert!(r["position"].is_null());
+    // the app reads the story straight from the chain: the newest events, newest first
+    let recent = view(&e, "recent", json!({"n": 3})).await?;
+    assert_eq!(recent[0]["event"], json!("refused"));
+    assert_eq!(recent[0]["data"]["code"], json!("FROZEN"));
+    assert!(recent.as_array().unwrap().iter().any(|v| v["event"] == json!("frozen")));
     assert_eq!(u(&view(&e, "account", json!({"owner": e.alice.id()})).await?["balance"]), 4_075_434_000);
 
     // she revokes and takes her money home; The Machine keeps only the $5 she paid it
