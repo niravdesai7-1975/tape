@@ -319,7 +319,7 @@ async function tick() {
     const refused = mine.find(e => e.event === 'refused');
     const lastEv = mine[0];
     $('ban').classList.toggle('on', !!refused && lastEv && (lastEv.event === 'refused' || acct.frozen));
-    if (refused) $('ban').textContent = `REFUSED ON CHAIN: ${refused.data.code} — nothing moves. She was asleep.`;
+    if (refused) $('ban').textContent = `REFUSED ON CHAIN: ${refused.data.code} — no order went to Coinbase. She was asleep.`;
     $('st').innerHTML = acct.frozen ? 'FROZEN <span class="moon">🌙</span>' : (grant && !grant.revoked ? 'THE MACHINE IS TRADING' : 'REVOKED');
     $('st').className = 'pill ' + (acct.frozen ? 'bad' : 'ok');
     // the open trade: the last ask whose ticket has an open receipt and no close yet

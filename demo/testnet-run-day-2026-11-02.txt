@@ -4,35 +4,35 @@
   Real NEAR prices (2-minute marks). The two calls are The Machine's registered BTC 24h open-interest reads on that day, replayed; the stop and target levels are the demo's.
 
   ── before the night: The Machine's record ─────────────────────────────
-  Oct 29 09:01  call #185 graded Wrong  4.4471 → 4.3562   https://testnet.nearblocks.io/txns/4Aht6HwXSKLoyd4fyTPp7UWvxMqMEtrB2XjDePWXVs5f
-  Oct 29 10:01  call #186 graded Right  4.4942 → 4.3680   https://testnet.nearblocks.io/txns/AGYQitu9P5B3WkBnnrQois1VcSXLED4hKWkD9Kf5WTnT
-  Oct 29 12:01  call #187 graded Right  4.3170 → 4.4117   https://testnet.nearblocks.io/txns/4Nm7nMMPTvnco5ni6ZiNQ5Pmm6VJVRNBiZHwaAmG47RG
-  Oct 29 13:01  call #188 graded Right  4.3562 → 4.4665   https://testnet.nearblocks.io/txns/H8ZL9wFev1kLBcXhvHA9vbcd2Lj6CXPmJCbh4QVHP4BT
-  Oct 29 15:01  call #189 graded Right  4.4205 → 4.5183   https://testnet.nearblocks.io/txns/7dum8RefmEZt57K2c4xLeig2YrdRgyWNWX1tGjr94neE
+  Oct 29 09:01  call #200 graded Wrong  4.4471 → 4.3562   https://testnet.nearblocks.io/txns/E1a8PjDa3fcUkahLw2UGiXeQHnhpzee8uLaKvhwVQ6VQ
+  Oct 29 10:01  call #201 graded Right  4.4942 → 4.3680   https://testnet.nearblocks.io/txns/BzNTkLrxuf7TcnEHrke4RR9rENLcNvfiPovYASwq616f
+  Oct 29 12:01  call #202 graded Right  4.3170 → 4.4117   https://testnet.nearblocks.io/txns/CzEfmhCzyLs1PxXZuJQkk9Zi2AeGFm68qFN2QFxx64R2
+  Oct 29 13:01  call #203 graded Right  4.3562 → 4.4665   https://testnet.nearblocks.io/txns/HQC6CJEPDJ9pkwRP53977nfpStSV2AEBEPuNfNyWQvaR
+  Oct 29 15:01  call #204 graded Right  4.4205 → 4.5183   https://testnet.nearblocks.io/txns/AzkZ5zn7T8khtbJSPXq9MUPQQcaycBjwtk4zhhNCTGpF
   record, last 5: 4 right of 5
 
   ── the day ─────────────────────────────────────────────────────────────
   Oct 30 00:31  Alice connects Coinbase: $5000.00 stays there, under a trade-only key — it can trade, it cannot withdraw.
-               $20 of fees come to NEAR via Intents, so she can pay The Machine per call   https://testnet.nearblocks.io/txns/6QNqXyJGRhfJ8BPXN8N7Eoke9nXoyhJ62fsJohMB9fKH
-  Oct 30 01:01  NEAR 3.9896 — The Machine locks call 1 (long) on chain before the move   https://testnet.nearblocks.io/txns/83x99As6YdvzhstXkXezrJzU7wxnxBAjgUHHYxm6audn
+               $20 of fees come to NEAR via Intents, so she can pay The Machine per call   https://testnet.nearblocks.io/txns/Hup2d9gPwh6M8unmNRc3jmPGD2GZRmvsN9W7asKEM7hq
+  Oct 30 01:01  NEAR 3.9896 — The Machine locks call 1 (long) on chain before the move   https://testnet.nearblocks.io/txns/BPsT9MzsLNwHvJw79YRHeb9CMVRHQy6gmvmE72Z3HzWS
                what it sees: BTC 24h: shorts closed $2.3B, longs +$1.4B — the largest flip in 30 days. NEAR flushed to 3.94 into $36M of long liquidations; buyers built for the first time tonight.
   Oct 30 01:01  Alice hires The Machine — her rules on chain, her money on Coinbase: Coinbase's margin rules · a stop on every trade ·
-               stops itself at −10% · only while its record is above 55% · every trade on a published call   https://testnet.nearblocks.io/txns/Sa1xChgt7Ue8aj2txBmE79cvjvqatwmNLGgKv266B29
-               Alice pays $5 for it and sees the levels: stop 3.85, target 4.30   https://testnet.nearblocks.io/txns/96RUzPeFtukne67ag1Abz2sGuh4Hh8Q36cqHvW2NE1Ts
-               The chain clears the order under her rules (ticket #0)   https://testnet.nearblocks.io/txns/8918i3LXwsGKBkR3ktXR5HLVX1j48Y8uVF62fuZiphKW
-               Coinbase fills 3 contracts at 3.9910 with $3000 of her margin; the receipt lands on chain   https://testnet.nearblocks.io/txns/GXxJEVdAcjsUYeh2MJ6tg2GSjqNx2m1wW8Pqp9NkmVHM
-  Oct 30 05:01  call 1 graded Right (3.9896 → 4.2250); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/Ers4tF92d4UgnGH4J31csZ33RHbUxK84qmmA7TZvgQnY
-  Oct 30 06:31  NEAR 4.3035 — call 1: target hit on Coinbase, +$454.54. Receipt on chain; her Coinbase balance $5454.54   https://testnet.nearblocks.io/txns/DcLjkTFqhn9jY8bdi5bb1VqpshHZqRE2T9QeGK5az3J5
-  Oct 30 17:01  NEAR 4.2901 — The Machine locks call 2 (long) on chain before the move   https://testnet.nearblocks.io/txns/6vXcvSwcNofLdcghQjNazqPtv7bTovdR7PsHjCF8ZWL9
+               stops itself at −10% · only while its record is above 55% · every trade on a published call   https://testnet.nearblocks.io/txns/D3BdsiJ7CmKvuxBMcmW24z5T8dUrfkcuJRWzYrNksW3y
+               Alice pays $5 for it and sees the levels: stop 3.85, target 4.30   https://testnet.nearblocks.io/txns/8rDsScdsxSHqx8yZnD8QB2AdjuvnKvGMRDVKiqot7YAs
+               The chain clears the order under her rules (ticket #4)   https://testnet.nearblocks.io/txns/GFaiv5Eji8sMeqfGVhQVvVjLv9LLPcAeANtg2e2DmTxX
+               Coinbase fills 3 contracts at 3.9910 with $3000 of her margin; the receipt lands on chain   https://testnet.nearblocks.io/txns/J4yPjHLGe7TqkHaSg2YBpgRmjcNPrSUpHD5PgvnQtRFN
+  Oct 30 05:01  call 1 graded Right (3.9896 → 4.2250); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/8QLDh7jKohACQGFiEtpGvmcuZdVJKdy2YV2uwpd13hN2
+  Oct 30 06:31  NEAR 4.3035 — call 1: target hit on Coinbase, +$454.54. Receipt on chain; her Coinbase balance $5454.54   https://testnet.nearblocks.io/txns/DxQiKXghMdjbxsabqFbYP2rFajNfygkMxVfGGs5pKeZS
+  Oct 30 17:01  NEAR 4.2901 — The Machine locks call 2 (long) on chain before the move   https://testnet.nearblocks.io/txns/FABM7mUzmyRoFqMNak8HG2w54GnQGnaScoCRjJeRNWdQ
                what it sees: BTC 24h: longs +$2.9B, shorts closed $3.5B. Funding flat — nobody is paying to hold either side.
-               Alice pays $5 for it and sees the levels: stop 4.10, target 4.50   https://testnet.nearblocks.io/txns/6zW2GpjPabELUmDVx2upyiN4zyBg9UhrYk5AAei1s9Qz
-               The chain clears the order under her rules (ticket #1)   https://testnet.nearblocks.io/txns/GpphyMQ3NSpr2DrgfUQg8cwFiYaTTysES75CnDPJX36z
-               Coinbase fills 3 contracts at 4.2920 with $3000 of her margin; the receipt lands on chain   https://testnet.nearblocks.io/txns/BGKivSyUBWScCKSqyCCswFLa1fVd1AbGAtD9yXCMfSe3
-  Oct 30 21:03  call 2 graded Right (4.2901 → 4.3196); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/FYVTeX33UPC5MjqBELYeKDahvB7jLZ4ojhE7QziaRnMN
-  Oct 31 16:25  NEAR 4.5010 — call 2: target hit on Coinbase, +$302.59. Receipt on chain; her Coinbase balance $5757.13   https://testnet.nearblocks.io/txns/ENcD7YZ8XXyZ8knyWGrUUTnvXskiAPyPyEFgFnbrfroo
+               Alice pays $5 for it and sees the levels: stop 4.10, target 4.50   https://testnet.nearblocks.io/txns/5deRUPszqBTNYsEFax7Q9CNruKA9xNPY54wmqLbLJKXz
+               The chain clears the order under her rules (ticket #5)   https://testnet.nearblocks.io/txns/CBtw7YMGdMJWS2ZyRD1WD3JKgEev9AUmVb3N7T5nS3Lg
+               Coinbase fills 3 contracts at 4.2920 with $3000 of her margin; the receipt lands on chain   https://testnet.nearblocks.io/txns/F1vBDEX4XmNaYxh9ktueZtuKLTHgy9rQUVBdbGjjNkJS
+  Oct 30 21:03  call 2 graded Right (4.2901 → 4.3196); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/A4EDqxi5zrp9j68VRkgxks1XZLNNrCSAp4RuvhbfDTwt
+  Oct 31 16:25  NEAR 4.5010 — call 2: target hit on Coinbase, +$302.59. Receipt on chain; her Coinbase balance $5757.13   https://testnet.nearblocks.io/txns/BXsaetJuf4VqogmSGnxHPPUhekrvJTyJPxdKeDiZ11o1
 
   ── the morning ─────────────────────────────────────────────────────────
-  Alice revokes The Machine — one tap; the key is dead   https://testnet.nearblocks.io/txns/AriQeL2jpttDnyfkXryfeqAnUCXhx4LnpWNTGNLUFKeT
+  Alice revokes The Machine — one tap; the key is dead   https://testnet.nearblocks.io/txns/AZnNC4RLb7tBH8KHfRSf5SVpH2knqWwRfB2vKdCqqcfr
   Her Coinbase balance: $5757.13. It never left her account.
   The Machine's pay on chain: $10.00 — $5 per call she used. It never held her money or her keys.
   The Machine's public record, last 8: 7 right of 8 — misses included.

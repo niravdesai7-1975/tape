@@ -16,7 +16,7 @@ use tape_venue as venue;
 
 const ONE_YOCTO: NearToken = NearToken::from_yoctonear(1);
 const GAS_FT: Gas = Gas::from_tgas(10);
-const GAS_CB: Gas = Gas::from_tgas(10);
+const GAS_CB: Gas = Gas::from_tgas(30);
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
