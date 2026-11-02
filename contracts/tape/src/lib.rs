@@ -58,11 +58,10 @@ pub struct Tape {
     positions: IterableMap<u64, Pos>,
     next_pos: u64,
     pool: u128,
+    events: Vec<String>,
 }
 
-fn event(kind: &str, data: near_sdk::serde_json::Value) {
-    log!("EVENT_JSON:{}", near_sdk::serde_json::json!({"standard": "tape", "version": "1.0.0", "event": kind, "data": data}));
-}
+const RECENT: usize = 100; // newest events kept in state for the app
 
 fn block_s() -> u64 { env::block_timestamp() / 1_000_000_000 }
 
@@ -75,7 +74,7 @@ impl Tape {
             usdc, keeper, demo, market: venue::Market::near(), oracle: None,
             book: calls::Book::new(grader.as_str(), me.as_str(), &[], 10),
             accounts: LookupMap::new(b"a"), grants: LookupMap::new(b"g"), used_calls: LookupMap::new(b"u"),
-            positions: IterableMap::new(b"p"), next_pos: 0, pool: 0,
+            positions: IterableMap::new(b"p"), next_pos: 0, pool: 0, events: Vec::new(),
         }
     }
 
@@ -89,7 +88,7 @@ impl Tape {
             let mut a = self.acct(&sender_id);
             a.deposit(amount);
             self.accounts.insert(sender_id.clone(), a);
-            event("deposit", near_sdk::serde_json::json!({"owner": sender_id, "amount": amount.to_string()}));
+            self.emit("deposit", near_sdk::serde_json::json!({"owner": sender_id, "amount": amount.to_string()}));
             return PromiseOrValue::Value(U128(0));
         }
         if msg == "pool" {
@@ -103,7 +102,7 @@ impl Tape {
                     let mut a = self.acct(&agent);
                     a.balance += price;
                     self.accounts.insert(agent.clone(), a);
-                    event("bought", near_sdk::serde_json::json!({"member": sender_id, "call": id, "agent": agent, "price": price.to_string()}));
+                    self.emit("bought", near_sdk::serde_json::json!({"member": sender_id, "call": id, "agent": agent, "price": price.to_string()}));
                     PromiseOrValue::Value(U128(amount - price))
                 }
                 _ => PromiseOrValue::Value(U128(amount)),                  // not allowed, already bought, or too little: refund
@@ -120,7 +119,7 @@ impl Tape {
         let mut a = self.acct(&me);
         if let Err(e) = a.withdraw(me.as_str(), me.as_str(), amount.0) { env::panic_str(&format!("{e:?}")); }
         self.accounts.insert(me.clone(), a);
-        event("withdraw", near_sdk::serde_json::json!({"owner": me, "amount": amount.0.to_string()}));
+        self.emit("withdraw", near_sdk::serde_json::json!({"owner": me, "amount": amount.0.to_string()}));
         Promise::new(self.usdc.clone())
             .function_call("ft_transfer".to_string(), near_sdk::serde_json::to_vec(&near_sdk::serde_json::json!({"receiver_id": me, "amount": amount})).unwrap(), ONE_YOCTO, GAS_FT)
             .then(Promise::new(env::current_account_id()).function_call("on_withdraw".to_string(),
@@ -142,20 +141,20 @@ impl Tape {
     pub fn commit(&mut self, hash: String, market: String, side: Side, price: U128) -> u64 {
         let agent = env::predecessor_account_id();
         let id = self.book.commit(agent.as_str(), &hash, &market, side.c(), price.0, self.now()).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
-        event("committed", near_sdk::serde_json::json!({"id": id, "agent": agent, "market": market, "side": side, "hash": hash}));
+        self.emit("committed", near_sdk::serde_json::json!({"id": id, "agent": agent, "market": market, "side": side, "hash": hash}));
         id
     }
 
     pub fn reveal(&mut self, id: u64) {
         let agent = env::predecessor_account_id();
         self.book.reveal(agent.as_str(), id, self.now()).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
-        event("revealed", near_sdk::serde_json::json!({"id": id}));
+        self.emit("revealed", near_sdk::serde_json::json!({"id": id}));
     }
 
     pub fn grade(&mut self, id: u64, payload: String, px_entry: u64, px_4h: u64) -> calls::Outcome {
         let caller = env::predecessor_account_id();
         let o = self.book.grade(caller.as_str(), id, &payload, px_entry, px_4h, self.now()).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
-        event("graded", near_sdk::serde_json::json!({"id": id, "outcome": o, "px_entry": px_entry, "px_4h": px_4h, "levels": payload}));
+        self.emit("graded", near_sdk::serde_json::json!({"id": id, "outcome": o, "px_entry": px_entry, "px_4h": px_4h, "levels": payload}));
         o
     }
 
@@ -172,13 +171,13 @@ impl Tape {
     pub fn grant(&mut self, agent: AccountId, policy: guard::Policy) {
         let owner = env::predecessor_account_id();
         self.grants.insert((owner.clone(), agent.clone()), Grant { policy, revoked: false });
-        event("granted", near_sdk::serde_json::json!({"owner": owner, "agent": agent}));
+        self.emit("granted", near_sdk::serde_json::json!({"owner": owner, "agent": agent}));
     }
 
     pub fn revoke(&mut self, agent: AccountId) {
         let owner = env::predecessor_account_id();
         if let Some(g) = self.grants.get_mut(&(owner.clone(), agent.clone())) { g.revoked = true; }
-        event("revoked", near_sdk::serde_json::json!({"owner": owner, "agent": agent}));
+        self.emit("revoked", near_sdk::serde_json::json!({"owner": owner, "agent": agent}));
     }
 
     pub fn unfreeze(&mut self) {
@@ -194,17 +193,13 @@ impl Tape {
     pub fn agent_open(&mut self, owner: AccountId, market: String, side: Side, qty: u32, collateral: U128,
                       stop_px: Option<u64>, target_px: Option<u64>, call_id: Option<u64>) -> OpenResult {
         let agent = env::predecessor_account_id();
-        let refuse = |code: &str| {
-            event("refused", near_sdk::serde_json::json!({"owner": owner, "agent": agent, "code": code}));
-            OpenResult { position: None, refused: Some(code.to_string()) }
-        };
-        let Some(grant) = self.grants.get(&(owner.clone(), agent.clone())).cloned() else { return refuse("REVOKED") };
+        let Some(grant) = self.grants.get(&(owner.clone(), agent.clone())).cloned() else { return self.refuse(&owner, &agent, "REVOKED") };
         // mark the owner's equity first: the freeze is a condition on money, checked before every order
         let eq = self.equity(&owner);
         let mut a = self.acct(&owner);
         let was = a.frozen;
         a.mark(eq, grant.policy.drawdown_freeze_bp);
-        if a.frozen && !was { event("frozen", near_sdk::serde_json::json!({"owner": owner, "equity": eq.to_string(), "peak": a.peak.to_string()})); }
+        if a.frozen && !was { self.emit("frozen", near_sdk::serde_json::json!({"owner": owner, "equity": eq.to_string(), "peak": a.peak.to_string()})); }
         let frozen = a.frozen;
         self.accounts.insert(owner.clone(), a);
 
@@ -222,7 +217,7 @@ impl Tape {
         let ctx = guard::Ctx { agent: agent.as_str(), revoked: grant.revoked, frozen, open_exposure: exposure,
                                record: guard::Record { n, right }, call: cv.as_ref(), call_used_by_owner: used };
         if let Err(r) = guard::check(&grant.policy, &order, &ctx) {
-            return refuse(code(r));
+            return self.refuse(&owner, &agent, code(r));
         }
         let id = self.open_for(&owner, &agent, side, qty, collateral.0, stop_px, target_px);
         if let Some(c) = call_id {
@@ -305,10 +300,27 @@ impl Tape {
     pub fn position(&self, id: u64) -> Option<Pos> { self.positions.get(&id).cloned() }
     pub fn pool(&self) -> U128 { U128(self.pool) }
     pub fn oracle(&self) -> Option<venue::Oracle> { self.oracle }
+    /// The newest events, newest first — what the app shows.
+    pub fn recent(&self, n: u32) -> Vec<near_sdk::serde_json::Value> {
+        self.events.iter().rev().take(n as usize).filter_map(|e| near_sdk::serde_json::from_str(e).ok()).collect()
+    }
     pub fn grant_of(&self, owner: AccountId, agent: AccountId) -> Option<Grant> { self.grants.get(&(owner, agent)).cloned() }
 }
 
 impl Tape {
+    /// NEP-297 event in the logs, and kept (newest RECENT) for the app.
+    fn emit(&mut self, kind: &str, data: near_sdk::serde_json::Value) {
+        let e = near_sdk::serde_json::json!({"standard": "tape", "version": "1.0.0", "event": kind, "ts": self.now(), "data": data}).to_string();
+        log!("EVENT_JSON:{}", e);
+        self.events.push(e);
+        if self.events.len() > RECENT { self.events.remove(0); }
+    }
+
+    fn refuse(&mut self, owner: &AccountId, agent: &AccountId, code: &str) -> OpenResult {
+        self.emit("refused", near_sdk::serde_json::json!({"owner": owner, "agent": agent, "code": code}));
+        OpenResult { position: None, refused: Some(code.to_string()) }
+    }
+
     /// The contract's clock: block time live; the replay clock in demo mode.
     fn now(&self) -> u64 {
         if self.demo { self.oracle.map(|o| o.ts).unwrap_or(0) } else { block_s() }
@@ -357,7 +369,7 @@ impl Tape {
         let p = venue::Position { owner: owner.to_string(), beneficiary: Some(owner.to_string()), market: m.id.clone(), side: side.v(),
                                   qty, entry_px: fill, collateral, stop_px, target_px };
         self.positions.insert(id, Pos { id, p, opened_by: by.clone() });
-        event("opened", near_sdk::serde_json::json!({"id": id, "owner": owner, "by": by, "side": side, "qty": qty, "px": fill,
+        self.emit("opened", near_sdk::serde_json::json!({"id": id, "owner": owner, "by": by, "side": side, "qty": qty, "px": fill,
                                                        "collateral": collateral.to_string(), "fee": fee.to_string(), "stop": stop_px, "target": target_px}));
         id
     }
@@ -379,7 +391,7 @@ impl Tape {
         }
         self.pool = (self.pool + x.p.collateral).checked_sub(paid).unwrap_or_else(|| env::panic_str("pool exhausted"));
         self.positions.remove(&id);
-        event(how, near_sdk::serde_json::json!({"id": id, "owner": owner, "px": s.exit_px, "pnl": s.pnl.to_string(), "fee": s.fee.to_string(),
+        self.emit(how, near_sdk::serde_json::json!({"id": id, "owner": owner, "px": s.exit_px, "pnl": s.pnl.to_string(), "fee": s.fee.to_string(),
                                                   "to_owner": s.to_owner.to_string(), "bounty": s.bounty.to_string()}));
         U128(s.to_owner)
     }
