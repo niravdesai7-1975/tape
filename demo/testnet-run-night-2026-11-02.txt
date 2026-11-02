@@ -1,0 +1,41 @@
+
+  TAPE — give an agent your money, not your keys
+  NEAR, Oct 29–30 2026 — the night BTC lost $80K
+  Real NEAR prices (2-minute marks). The calls are scripted demo calls — the night the rules did their job.
+
+  ── before the night: The Machine's record ─────────────────────────────
+  Oct 29 09:01  call #64 graded Wrong  4.4471 → 4.3562   https://testnet.nearblocks.io/txns/CvyyphYzepg4tjWopJ7rSoZrAWET8n5J6JwoBujxMs7i
+  Oct 29 10:01  call #65 graded Right  4.4942 → 4.3680   https://testnet.nearblocks.io/txns/32Z9q3C6G5CG9s28uoy7cLPKVdHbQ23moJyFS2tGoj2r
+  Oct 29 12:01  call #66 graded Right  4.3170 → 4.4117   https://testnet.nearblocks.io/txns/HXCvATNu8g6NMnDpwx4Em5kwh8XkNLSmmHhfnQog9HKx
+  Oct 29 13:01  call #67 graded Right  4.3562 → 4.4665   https://testnet.nearblocks.io/txns/r9YUeBM7c6ax8LRycgNfnDRz8WF8SHYG5pWVKrA8gRT
+  Oct 29 15:01  call #68 graded Right  4.4205 → 4.5183   https://testnet.nearblocks.io/txns/ENhJ9dcd84dN2NsQHp39W3dEr957mbMm74u8Si272AuX
+  record, last 5: 4 right of 5
+
+  ── the night ───────────────────────────────────────────────────────────
+  Oct 29 16:01  Alice deposits $5000.00 from Coinbase, via NEAR Intents   https://testnet.nearblocks.io/txns/AtfYHgYUSz4efnzXsxBLqF3oThnvUHafWPin46KNHF2P
+  Oct 29 17:01  NEAR 4.5900 — The Machine locks call A (long) on chain before the move   https://testnet.nearblocks.io/txns/7Hsg5hwyLNQ7YVruzJgeF5Y4bXrR96MMSKkGY4a5M9Mm
+               what it sees: Buying pressure after the 4.52 high; BTC holding 81K.
+  Oct 29 17:01  Alice hires The Machine — rules on chain, keys with her: Coinbase's margin rules · a stop on every trade ·
+               stops itself at −10% · only while its record is above 55% · every trade on a published call   https://testnet.nearblocks.io/txns/AGqkiqiLYn5BZApf5TvExomQVxZUJstsSFfwM3Ry86ZM
+               Alice pays $5 for it and sees the levels: stop 4.40, target 4.90   https://testnet.nearblocks.io/txns/WhSJAFPBWkDdMPtqk6PzSnfSTcdK72eVUhJBEs58bR2
+               The Machine opens it with $3000 of her money, inside her policy   https://testnet.nearblocks.io/txns/ALtEKtww8YpNwiJ34xLz5hdV5BkV72byQ5G25zbGJJzA
+  Oct 29 18:47  NEAR 4.3986 — call A: stop hit. Alice's balance $4700.91   https://testnet.nearblocks.io/txns/EKrfg8zX7TGhBQW371DeHrCSD6LyBhzfu34ybHNtxKSW
+  Oct 29 21:01  call A graded Wrong (4.5900 → 4.1600); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/CutQbY7pXWaizrMBF7jXmZNZKoSvHPKJRDLHMP8c1wfj
+  Oct 29 21:31  NEAR 4.2266 — The Machine locks call B (long) on chain before the move   https://testnet.nearblocks.io/txns/G3dnHWNuvwSMYKtWvp4JuAf9Gf95X7p6obyuQzzNJHmk
+               what it sees: First bounce off 4.16; BTC shorts taking profit.
+               Alice pays $5 for it and sees the levels: stop 4.00, target 4.50   https://testnet.nearblocks.io/txns/HqG84dPdnkppi8uygP5iprM466XVFUmMTLiAYzCkt5Pn
+               The Machine opens it with $2800 of her money, inside her policy   https://testnet.nearblocks.io/txns/6EdQGtPgGHXZ8AVDjVodhzhp8XWNuZ13e8iVML8zLhHQ
+  Oct 30 00:27  NEAR 3.9730 — call B: stop hit. Alice's balance $4309.53   https://testnet.nearblocks.io/txns/ReK2R8MBMT7KdZtgZhCP7WYkjGYh9EdxkQPPKeNxr17
+  Oct 30 01:31  call B graded Wrong (4.2266 → 3.9589); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/EDm4VPDaMdKkpKFMysPFU1wDuDYHnMtGgzBDL5wKr49f
+  Oct 30 01:31  NEAR 3.9589 — The Machine locks call C (long) on chain before the move   https://testnet.nearblocks.io/txns/BvTSsEfxvMxtvgrjAV4aKLhd3yYRkSPieWuBp2sziDRA
+               what it sees: BTC 24h flipped to net longs +$3.7B; NEAR flushed to 3.94.
+               Alice pays $5 for it and sees the levels: stop 3.80, target 4.30   https://testnet.nearblocks.io/txns/AbCrZrpRmUYGDXaqqJ8ZpgbiAC71jV3i7DSQg33w8bzc
+               REFUSED ON CHAIN: FROZEN — her money $4309.53 is under the line she set from a $5000.00 peak. Nothing moves.   https://testnet.nearblocks.io/txns/GH3EZYr96Ce4fX44giCtC6d5JuFzihhNc8tgwjrUM96z
+  Oct 30 05:33  call C graded Right (3.9589 → 4.2600); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/6TkfvWMv55uDsvP14mcs3secj2x9p7gXZPBpNM91kc9f
+
+  ── the morning ─────────────────────────────────────────────────────────
+  Alice revokes The Machine   https://testnet.nearblocks.io/txns/6Yf4CTToxyE5F6xphbBxXM7ecyUydJQ7RAETAdUWcLa6
+  Alice withdraws $4309.53 — to herself; nobody else can   https://testnet.nearblocks.io/txns/92wKFuWMomatJDn6eyBEQyFWWC8wrbhRnLy8C2tYQGLa
+  The Machine keeps what she paid it for calls: $15.00. It never held her keys.
+  The Machine's public record, last 8: 5 right of 8 — misses included.
+

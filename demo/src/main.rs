@@ -36,7 +36,7 @@ fn money(v: &Value) -> f64 {
 
 fn hhmm(ts: u64) -> String {
     let s = ts % 86_400;
-    let day = if ts < 1_793_318_400 { "Oct 29" } else { "Oct 30" }; // 2026-10-30T00:00Z
+    let day = if ts < 1_793_318_400 { "Oct 29" } else if ts < 1_793_404_800 { "Oct 30" } else { "Oct 31" };
     format!("{day} {:02}:{:02}", s / 3600, (s % 3600) / 60)
 }
 
@@ -116,7 +116,8 @@ fn payload(side: &str, entry: u64, stop: u64, target: u64, tag: &str) -> String 
 async fn main() -> Result<()> {
     let testnet = std::env::args().any(|a| a == "testnet");
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf();
-    let day: Value = serde_json::from_str(&std::fs::read_to_string(root.join("day.json"))?)?;
+    let file = std::env::args().find(|a| a.ends_with(".json")).unwrap_or_else(|| "day.json".to_string());
+    let day: Value = serde_json::from_str(&std::fs::read_to_string(root.join(&file))?)?;
     let prices: Vec<(u64, u64)> = day["prices"].as_array().unwrap().iter().map(|p| (p["ts"].as_u64().unwrap(), p["px"].as_u64().unwrap())).collect();
     let run_tag = format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs());
 
@@ -171,7 +172,7 @@ async fn main() -> Result<()> {
         let e = px_at(&prices, at);
         let p = payload(side, e, e * 97 / 100, e * 103 / 100, &format!("seed{i}-{run_tag}"));
         c.price(at, e).await?;
-        let (id, _) = c.call(&c.machine, &c.tape.clone(), "commit", json!({"hash": tape_calls::hash_hex(&p), "market": "NEAR", "side": side, "price": price.to_string()}), 0).await?;
+        let (id, _) = c.call(&c.machine, &c.tape.clone(), "commit", json!({"hash": tape_calls::hash_hex(&p), "market": "NEAR", "side": side, "price": price.to_string(), "note": null}), 0).await?;
         c.call(&c.machine, &c.tape.clone(), "reveal", json!({"id": id}), 0).await?;
         seeds.push((id.as_u64().unwrap(), at, e, p));
     }
@@ -185,15 +186,13 @@ async fn main() -> Result<()> {
     let rec = c.view("record", json!({"agent": c.machine.id(), "window_n": 5})).await?;
     println!("  record, last 5: {} right of {}\n", rec[1], rec[0]);
 
-    // 2. Alice funds and sets the rules — a policy, not her keys
+    // 2. Alice funds. (She hires The Machine at its first call, once she has seen what it sees.)
     let m = &day["member"];
     c.price(m["at"].as_u64().unwrap(), px_at(&prices, m["at"].as_u64().unwrap())).await?;
     let l = c.deposit(&c.alice, dep, "deposit").await?;
     println!("  ── the night ───────────────────────────────────────────────────────────");
-    println!("  {}  Alice deposits ${:.2}   {l}", hhmm(m["at"].as_u64().unwrap()), dep as f64 / D);
-    let (_, l) = c.call(&c.alice, &c.tape.clone(), "grant", json!({"agent": c.machine.id(), "policy": m["policy"]}), 0).await?;
-    println!("  {}  Alice gives The Machine a policy, not her keys: NEAR only · ≤ 2.5x · a stop on every order ·", hhmm(m["at"].as_u64().unwrap()));
-    println!("               freeze at −10% · record ≥ 55% of its last 5 · every trade on a published call   {l}");
+    println!("  {}  Alice deposits ${:.2} from Coinbase, via NEAR Intents   {l}", hhmm(m["at"].as_u64().unwrap()), dep as f64 / D);
+    let mut hired = false;
 
     // 3. The calls, the trades, the stops, the refusal
     let mut open: Vec<(String, u64, u64, u64)> = vec![]; // (name, position, stop, target)
@@ -231,10 +230,17 @@ async fn main() -> Result<()> {
             let (stop, target) = (k["stop"].as_u64().unwrap(), k["target"].as_u64().unwrap());
             c.price(ts, px).await?;
             let p = payload(side, px, stop, target, &format!("{name}-{run_tag}"));
-            let (id, l) = c.call(&c.machine, &c.tape.clone(), "commit", json!({"hash": tape_calls::hash_hex(&p), "market": "NEAR", "side": side, "price": price.to_string()}), 0).await?;
+            let (id, l) = c.call(&c.machine, &c.tape.clone(), "commit", json!({"hash": tape_calls::hash_hex(&p), "market": "NEAR", "side": side, "price": price.to_string(), "note": k["note"]}), 0).await?;
             let id = id.as_u64().unwrap();
             c.call(&c.machine, &c.tape.clone(), "reveal", json!({"id": id}), 0).await?;
             println!("  {}  NEAR {:.4} — The Machine locks call {name} ({}) on chain before the move   {l}", hhmm(ts), px as f64 / D, side.to_lowercase());
+            if let Some(n) = k["note"].as_str() { println!("               what it sees: {n}"); }
+            if !hired {
+                hired = true;
+                let (_, l) = c.call(&c.alice, &c.tape.clone(), "grant", json!({"agent": c.machine.id(), "policy": m["policy"]}), 0).await?;
+                println!("  {}  Alice hires The Machine — rules on chain, keys with her: Coinbase's margin rules · a stop on every trade ·", hhmm(ts));
+                println!("               stops itself at −10% · only while its record is above 55% · every trade on a published call   {l}");
+            }
             let l = c.deposit(&c.alice, price, &format!("buy:{id}")).await?;
             println!("               Alice pays $5 for it and sees the levels: stop {:.2}, target {:.2}   {l}", stop as f64 / D, target as f64 / D);
             let (r, l) = c.call(&c.machine, &c.tape.clone(), "agent_open", json!({"owner": c.alice.id(), "market": "NEAR", "side": side,
@@ -244,7 +250,7 @@ async fn main() -> Result<()> {
                 open.push((name.clone(), pos, stop, target));
             } else {
                 let a = c.view("account", json!({"owner": c.alice.id()})).await?;
-                println!("               REFUSED ON CHAIN: {} — her balance ${:.2} is under 90% of her ${:.2} peak. Nothing moves.   {l}",
+                println!("               REFUSED ON CHAIN: {} — her money ${:.2} is under the line she set from a ${:.2} peak. Nothing moves.   {l}",
                          r["refused"].as_str().unwrap_or("?"), money(&a["balance"]), money(&a["peak"]));
             }
             graded_later.push((id, ts, px, p, name));

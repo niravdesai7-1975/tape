@@ -1,0 +1,36 @@
+
+  TAPE — give an agent your money, not your keys
+  NEAR, Oct 30 2026 — the morning after BTC lost $80K
+  Real NEAR prices (2-minute marks). The two calls are The Machine's registered BTC 24h open-interest reads on that day, replayed; the stop and target levels are the demo's.
+
+  ── before the night: The Machine's record ─────────────────────────────
+  Oct 29 09:01  call #72 graded Wrong  4.4471 → 4.3562   https://testnet.nearblocks.io/txns/9yDUTh5WSqfTC6PnLPYAnQvXB8ciMtTz2ZEPAVFcCXXV
+  Oct 29 10:01  call #73 graded Right  4.4942 → 4.3680   https://testnet.nearblocks.io/txns/E76J6sgMiEJ4nxxsPDNVqZECWmxmjrke1TKRmh37erQQ
+  Oct 29 12:01  call #74 graded Right  4.3170 → 4.4117   https://testnet.nearblocks.io/txns/ugZEVN8CZMf3XaryFLNbAdUKxS62g4YBYa1YuTUUAzN
+  Oct 29 13:01  call #75 graded Right  4.3562 → 4.4665   https://testnet.nearblocks.io/txns/4FUevEN2XWXqYbE3Jxuw8dVJEeiALqAp9XcwLnMBtQDK
+  Oct 29 15:01  call #76 graded Right  4.4205 → 4.5183   https://testnet.nearblocks.io/txns/8XWEbp3eGkXg3PCkZe2CQEuCG3Q6hXnK68SxCNXJMgvq
+  record, last 5: 4 right of 5
+
+  ── the night ───────────────────────────────────────────────────────────
+  Oct 30 00:31  Alice deposits $5000.00 from Coinbase, via NEAR Intents   https://testnet.nearblocks.io/txns/4C2BtsQMTyezzNBGYdSiPfY6v5tgYsYTbULhgXf7m9xD
+  Oct 30 01:01  NEAR 3.9896 — The Machine locks call 1 (long) on chain before the move   https://testnet.nearblocks.io/txns/DStbUjL6XK99WrWQTjmLSwHLGuXpM6m72sL4EDrMdDo5
+               what it sees: BTC 24h: shorts closed $2.3B, longs +$1.4B — the largest flip in 30 days. NEAR flushed to 3.94 into $36M of long liquidations; buyers built for the first time tonight.
+  Oct 30 01:01  Alice hires The Machine — rules on chain, keys with her: Coinbase's margin rules · a stop on every trade ·
+               stops itself at −10% · only while its record is above 55% · every trade on a published call   https://testnet.nearblocks.io/txns/BztDo4a2ALKDE7bPBoQLW8fnLJnp6jyo3ZoS7u2m2nCh
+               Alice pays $5 for it and sees the levels: stop 3.85, target 4.30   https://testnet.nearblocks.io/txns/9L5Atidu9XhVFEY2t2VQvJARaaziYYJM4dc4R5go93UT
+               The Machine opens it with $3000 of her money, inside her policy   https://testnet.nearblocks.io/txns/CCdvqh2XQXDVJb465E1LUXZ1hTXcFS4rgCS5JdJhXU1r
+  Oct 30 05:01  call 1 graded Right (3.9896 → 4.2250); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/2mtdwkt8xmF33xcLF4TFgcKgqijuECKX7drRKyuZuGhR
+  Oct 30 06:31  NEAR 4.3035 — call 1: target hit. Alice's balance $5454.54   https://testnet.nearblocks.io/txns/4tjpvx8Sgk4LdM6r17XdQMgQmZL5zLm1mNMNzaEDv4jP
+  Oct 30 17:01  NEAR 4.2901 — The Machine locks call 2 (long) on chain before the move   https://testnet.nearblocks.io/txns/9rXHfdGWx2knCD47AJRQnEdy19RP5oBSXwNj2djLWyR8
+               what it sees: BTC 24h: longs +$2.9B, shorts closed $3.5B. Funding flat — nobody is paying to hold either side.
+               Alice pays $5 for it and sees the levels: stop 4.10, target 4.50   https://testnet.nearblocks.io/txns/HMjwr8dVnnpJYMSTi17XNDss45Dw8sEnDYFYNQP8QsJ4
+               The Machine opens it with $3000 of her money, inside her policy   https://testnet.nearblocks.io/txns/79wjUkfnasghkonuteuC2iWYz37ekE9XmMmhcjpySNad
+  Oct 30 21:03  call 2 graded Right (4.2901 → 4.3196); its levels are now public and match the hash   https://testnet.nearblocks.io/txns/9wjfeu87GqSjUiCgFTJs7C8AfmQMT3RaiuKzNwp5uer7
+  Oct 31 16:25  NEAR 4.5010 — call 2: target hit. Alice's balance $5757.13   https://testnet.nearblocks.io/txns/HvhUT2rR12fZjZLnXYUWGvzDxiWRhEt6yipPXka76Ewu
+
+  ── the morning ─────────────────────────────────────────────────────────
+  Alice revokes The Machine   https://testnet.nearblocks.io/txns/A5ZvbpiM8U8otqccGzargmt3hTcj3R6yPVHSHG5fnJWL
+  Alice withdraws $5757.13 — to herself; nobody else can   https://testnet.nearblocks.io/txns/DziG2Uu3NoJq4WjW1VtHJq6Bptaiug3FWAWCkRASsQyb
+  The Machine keeps what she paid it for calls: $10.00. It never held her keys.
+  The Machine's public record, last 8: 7 right of 8 — misses included.
+
