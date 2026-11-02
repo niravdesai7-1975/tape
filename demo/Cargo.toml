@@ -11,3 +11,4 @@ tokio = { version = "1", features = ["full"] }
 serde_json = "1"
 anyhow = "1"
 tape-calls = { path = "../contracts/calls" }
+tape-venue = { path = "../contracts/venue" }

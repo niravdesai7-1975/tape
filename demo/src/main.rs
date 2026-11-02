@@ -4,9 +4,11 @@
 //!   cargo run -p tape-demo -- testnet      the live testnet deployment (app.tape-nvibe.testnet), keys from
 //!                                          ~/.near-credentials/testnet (or TAPE_KEYS); prints explorer links
 //!
-//! The prices are real (NEAR, Oct 29–30 2026, 2-minute marks). The calls are scripted demo calls, not The Machine's live
-//! output — the demo shows the protocol: a record nobody can edit, and an agent that trades a member's money only inside
-//! rules the chain enforces. The keeper replays the day: each price carries its recorded time, which is the contract's clock.
+//! The prices are real (NEAR, Oct 29–31 2026, 2-minute marks). The member's money never leaves her own Coinbase account:
+//! this runner stands in for Coinbase, filling at the recorded price under the same margin model (`tape-venue`), and for
+//! The Machine's server, which asks the chain before every order and posts every fill's receipt. The chain holds her
+//! rules, her $5 per call, and the record. The keeper replays the day: each price carries its recorded time, which is the
+//! contract's clock.
 use anyhow::{anyhow, Context, Result};
 use near_workspaces::network::{Sandbox, Testnet};
 use near_workspaces::types::{NearToken, SecretKey};
@@ -121,7 +123,7 @@ async fn main() -> Result<()> {
     let prices: Vec<(u64, u64)> = day["prices"].as_array().unwrap().iter().map(|p| (p["ts"].as_u64().unwrap(), p["px"].as_u64().unwrap())).collect();
     let run_tag = format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs());
 
-    println!("\n  TAPE — give an agent your money, not your keys");
+    println!("\n  TAPE — hire an agent on chain; your money stays where you trade");
     println!("  {}", day["title"].as_str().unwrap());
     println!("  {}\n", day["note"].as_str().unwrap());
 
@@ -144,7 +146,7 @@ async fn main() -> Result<()> {
         let _ = c.call(&c.alice, &c.tape.clone(), "revoke", json!({"agent": c.machine.id()}), 0).await;
         let left = (money(&a["balance"]) * D).round() as u64;
         if left > 0 { c.call(&c.alice, &c.tape.clone(), "withdraw", json!({"amount": left.to_string()}), 1).await?; }
-        let _ = c.call(&c.alice, &c.tape.clone(), "unfreeze", json!({}), 0).await;
+        let _ = c.call(&c.alice, &c.tape.clone(), "unfreeze_at", json!({"equity": day["member"]["coinbase"].as_u64().unwrap().to_string()}), 0).await;
         // and The Machine cashes out earlier runs' call income, so this run's number is this run's
         let m = (money(&c.view("account", json!({"owner": c.machine.id()})).await?["balance"]) * D).round() as u64;
         if m > 0 { c.call(&c.machine, &c.tape.clone(), "withdraw", json!({"amount": m.to_string()}), 1).await?; }
@@ -155,8 +157,7 @@ async fn main() -> Result<()> {
         c.call(&c.funder, &c.usdc, "register", json!({"account_id": a.id()}), 0).await?;
     }
     let price = day["call_price"].as_u64().unwrap();
-    let dep = day["member"]["deposit"].as_u64().unwrap();
-    c.call(&c.funder, &c.usdc, "mint", json!({"account_id": c.alice.id(), "amount": (dep + 3 * price).to_string()}), 0).await?;
+    c.call(&c.funder, &c.usdc, "mint", json!({"account_id": c.alice.id(), "amount": (4 * price).to_string()}), 0).await?; // the $20 fee float
     if money(&c.view("pool", json!({})).await?) < 20_000.0 {
         c.call(&c.funder, &c.usdc, "mint", json!({"account_id": c.ops.id(), "amount": "20000000000"}), 0).await?;
         c.deposit(&c.ops, 20_000_000_000, "pool").await?;
@@ -186,29 +187,34 @@ async fn main() -> Result<()> {
     let rec = c.view("record", json!({"agent": c.machine.id(), "window_n": 5})).await?;
     println!("  record, last 5: {} right of {}\n", rec[1], rec[0]);
 
-    // 2. Alice funds. (She hires The Machine at its first call, once she has seen what it sees.)
+    // 2. Alice connects Coinbase. Her $5,000 stays there; a $20 fee float comes to NEAR through Intents.
     let m = &day["member"];
+    let mkt = tape_venue::Market::near();
+    let mut cash = m["coinbase"].as_u64().unwrap() as u128;          // her Coinbase cash, micro-USD
     c.price(m["at"].as_u64().unwrap(), px_at(&prices, m["at"].as_u64().unwrap())).await?;
-    let l = c.deposit(&c.alice, dep, "deposit").await?;
-    println!("  ── the night ───────────────────────────────────────────────────────────");
-    println!("  {}  Alice deposits ${:.2} from Coinbase, via NEAR Intents   {l}", hhmm(m["at"].as_u64().unwrap()), dep as f64 / D);
+    println!("  ── the day ─────────────────────────────────────────────────────────────");
+    println!("  {}  Alice connects Coinbase: ${:.2} there, a trade-only key — it can trade, it cannot withdraw.", hhmm(m["at"].as_u64().unwrap()), cash as f64 / D);
+    println!("               $20 of fees to NEAR via Intents, so she can pay The Machine per call.");
     let mut hired = false;
 
-    // 3. The calls, the trades, the stops, the refusal
-    let mut open: Vec<(String, u64, u64, u64)> = vec![]; // (name, position, stop, target)
+    // 3. The calls, the asks, the Coinbase fills, their receipts, the refusal
+    struct Open { name: String, ticket: u64, p: tape_venue::Position, before: u128 }
+    let mut open: Vec<Open> = vec![];
     let mut graded_later: Vec<(u64, u64, u64, String, String)> = vec![]; // (id, reveal_at, entry, payload, name)
     let calls = day["calls"].as_array().unwrap().clone();
     let mut ci = 0;
     for &(ts, px) in &prices {
-        // stops and targets first: the keeper fires them on the first recorded price through the level
+        // stops and targets first: Coinbase fills them on the first recorded price through the level
         let mut fired = vec![];
-        for (k, (name, pos, stop, target)) in open.iter().enumerate() {
-            if px <= *stop || px >= *target {
+        for (k, o) in open.iter().enumerate() {
+            if let Ok((t, s)) = tape_venue::trigger(&mkt, &o.p, px) {
+                cash += s.to_owner;
+                let pnl = cash as i128 - o.before as i128;                       // net of both fees
                 c.price(ts, px).await?;
-                let (t, l) = c.call(&c.keeper, &c.tape.clone(), "trigger", json!({"position_id": pos}), 0).await?;
-                let a = c.view("account", json!({"owner": c.alice.id()})).await?;
-                println!("  {}  NEAR {:.4} — call {name}: {} hit. Alice's balance ${:.2}   {l}", hhmm(ts), px as f64 / D,
-                         t.as_str().unwrap_or("?").to_lowercase(), money(&a["balance"]));
+                let (_, l) = c.call(&c.machine, &c.tape.clone(), "fill", json!({"owner": c.alice.id(), "ticket": o.ticket, "venue": "coinbase",
+                    "order_ref": format!("{}-{run_tag}-close", o.name), "kind": "Close", "px": s.exit_px, "pnl": pnl.to_string(), "equity": cash.to_string()}), 0).await?;
+                println!("  {}  NEAR {:.4} — call {}: {} hit on Coinbase, {}${:.2}. Receipt on chain; her Coinbase balance ${:.2}   {l}", hhmm(ts), px as f64 / D, o.name,
+                         if t == tape_venue::Trigger::Stop { "stop" } else { "target" }, if pnl < 0 { "−" } else { "+" }, pnl.abs() as f64 / D, cash as f64 / D);
                 fired.push(k);
             }
         }
@@ -227,7 +233,9 @@ async fn main() -> Result<()> {
             ci += 1;
             let name = k["name"].as_str().unwrap().to_string();
             let side = k["side"].as_str().unwrap();
+            let long = side == "Long";
             let (stop, target) = (k["stop"].as_u64().unwrap(), k["target"].as_u64().unwrap());
+            let (qty, collateral) = (k["qty"].as_u64().unwrap() as u32, k["collateral"].as_u64().unwrap() as u128);
             c.price(ts, px).await?;
             let p = payload(side, px, stop, target, &format!("{name}-{run_tag}"));
             let (id, l) = c.call(&c.machine, &c.tape.clone(), "commit", json!({"hash": tape_calls::hash_hex(&p), "market": "NEAR", "side": side, "price": price.to_string(), "note": k["note"]}), 0).await?;
@@ -238,39 +246,48 @@ async fn main() -> Result<()> {
             if !hired {
                 hired = true;
                 let (_, l) = c.call(&c.alice, &c.tape.clone(), "grant", json!({"agent": c.machine.id(), "policy": m["policy"]}), 0).await?;
-                println!("  {}  Alice hires The Machine — rules on chain, keys with her: Coinbase's margin rules · a stop on every trade ·", hhmm(ts));
+                println!("  {}  Alice hires The Machine — her rules on chain, her money on Coinbase: Coinbase's margin rules · a stop on every trade ·", hhmm(ts));
                 println!("               stops itself at −10% · only while its record is above 55% · every trade on a published call   {l}");
             }
             let l = c.deposit(&c.alice, price, &format!("buy:{id}")).await?;
             println!("               Alice pays $5 for it and sees the levels: stop {:.2}, target {:.2}   {l}", stop as f64 / D, target as f64 / D);
-            let (r, l) = c.call(&c.machine, &c.tape.clone(), "agent_open", json!({"owner": c.alice.id(), "market": "NEAR", "side": side,
-                "qty": k["qty"], "collateral": k["collateral"].as_u64().unwrap().to_string(), "stop_px": stop, "target_px": target, "call_id": id}), 0).await?;
-            if let Some(pos) = r["position"].as_u64() {
-                println!("               The Machine opens it with ${:.0} of her money, inside her policy   {l}", k["collateral"].as_u64().unwrap() as f64 / D);
-                open.push((name.clone(), pos, stop, target));
+            // the ask: before any order goes to Coinbase, the chain clears it under her rules
+            let fill = tape_venue::fill_px(&mkt, px, long);
+            let notional = tape_venue::notional(&mkt, qty, fill);
+            let equity = cash + open.iter().map(|o| o.p.collateral).sum::<u128>();
+            let (r, l) = c.call(&c.machine, &c.tape.clone(), "ask", json!({"owner": c.alice.id(), "market": "NEAR", "side": side, "qty": qty,
+                "collateral": collateral.to_string(), "notional": notional.to_string(), "stop_px": stop, "call_id": id, "equity": equity.to_string()}), 0).await?;
+            if let Some(ticket) = r["ticket"].as_u64() {
+                println!("               The chain clears the order under her rules (ticket #{ticket})   {l}");
+                let fee = tape_venue::taker_fee(&mkt, notional);
+                let before = cash;
+                cash -= collateral + fee;
+                let p = tape_venue::Position { owner: c.alice.id().to_string(), beneficiary: None, market: "NEAR".into(),
+                    side: if long { tape_venue::Side::Long } else { tape_venue::Side::Short }, qty, entry_px: fill, collateral, stop_px: Some(stop), target_px: Some(target) };
+                let (_, l) = c.call(&c.machine, &c.tape.clone(), "fill", json!({"owner": c.alice.id(), "ticket": ticket, "venue": "coinbase",
+                    "order_ref": format!("{name}-{run_tag}-open"), "kind": "Open", "px": fill, "pnl": null, "equity": (cash + collateral).to_string()}), 0).await?;
+                println!("               Coinbase fills {qty} contracts at {:.4} with ${:.0} of her margin; the receipt lands on chain   {l}", fill as f64 / D, collateral as f64 / D);
+                open.push(Open { name: name.clone(), ticket, p, before });
             } else {
                 let a = c.view("account", json!({"owner": c.alice.id()})).await?;
-                println!("               REFUSED ON CHAIN: {} — her money ${:.2} is under the line she set from a ${:.2} peak. Nothing moves.   {l}",
-                         r["refused"].as_str().unwrap_or("?"), money(&a["balance"]), money(&a["peak"]));
+                println!("               REFUSED ON CHAIN: {} — her money ${:.2} is under the line she set from a ${:.2} peak. No order goes to Coinbase.   {l}",
+                         r["refused"].as_str().unwrap_or("?"), equity as f64 / D, money(&a["peak"]));
             }
             graded_later.push((id, ts, px, p, name));
         }
         if ts >= day["end"].as_u64().unwrap() && graded_later.is_empty() && open.is_empty() { break; }
     }
 
-    // 4. She takes her money home
+    // 4. The morning: her money never left Coinbase
     println!("\n  ── the morning ─────────────────────────────────────────────────────────");
-    let a = c.view("account", json!({"owner": c.alice.id()})).await?;
-    let bal = (money(&a["balance"]) * D).round() as u64;
     let (_, l) = c.call(&c.alice, &c.tape.clone(), "revoke", json!({"agent": c.machine.id()}), 0).await?;
-    println!("  Alice revokes The Machine   {l}");
-    let (_, l) = c.call(&c.alice, &c.tape.clone(), "withdraw", json!({"amount": bal.to_string()}), 1).await?;
-    println!("  Alice withdraws ${:.2} — to herself; nobody else can   {l}", bal as f64 / D);
+    println!("  Alice revokes The Machine — one tap; the key is dead   {l}");
+    println!("  Her Coinbase balance: ${:.2}. It never left her account.", cash as f64 / D);
     let m_bal = money(&c.view("account", json!({"owner": c.machine.id()})).await?["balance"]);
-    println!("  The Machine keeps what she paid it for calls: ${m_bal:.2}. It never held her keys.");
+    println!("  The Machine's pay on chain: ${m_bal:.2} — $5 per call she used. It never held her money or her keys.");
     let rec = c.view("record", json!({"agent": c.machine.id(), "window_n": 8})).await?;
     println!("  The Machine's public record, last 8: {} right of {} — misses included.\n", rec[1], rec[0]);
-    let _ = c.call(&c.alice, &c.tape.clone(), "unfreeze", json!({}), 0).await; // ready for the next run
+    let _ = c.call(&c.alice, &c.tape.clone(), "unfreeze_at", json!({"equity": cash.to_string()}), 0).await; // ready for the next run
     Ok(())
 }
 

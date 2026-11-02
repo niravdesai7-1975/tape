@@ -3646,6 +3646,7 @@ dependencies = [
  "near-workspaces",
  "serde_json",
  "tape-calls",
+ "tape-venue",
  "tokio",
 ]
 

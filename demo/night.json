@@ -3987,7 +3987,7 @@
  ],
  "member": {
   "at": 1793289660,
-  "deposit": 5000000000,
+  "coinbase": 5000000000,
   "policy": {
    "markets": [
     "NEAR"
