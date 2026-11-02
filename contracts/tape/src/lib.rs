@@ -78,6 +78,21 @@ pub struct Tape {
 
 const RECENT: usize = 100; // newest events kept in state for the app
 
+/// The state before asks and receipts (deployed Nov 2, 2026); `migrate` carries it over.
+#[near(serializers = [borsh])]
+pub struct CallV1 {
+    id: u64, agent: String, market: String, side: calls::Side, commit_hash: String, commit_ts: u64, price: u128,
+    reveal_ts: Option<u64>, payload: Option<String>, grade: Option<calls::Grade>, fill_id: Option<String>,
+}
+#[near(serializers = [borsh])]
+pub struct BookV1 { calls: Vec<CallV1>, grader: String, venue: String, allowlist: Vec<String>, buyers: Vec<(String, u64)>, flat_bp: u32 }
+#[near(serializers = [borsh])]
+pub struct TapeV1 {
+    usdc: AccountId, keeper: AccountId, demo: bool, market: venue::Market, oracle: Option<venue::Oracle>, book: BookV1,
+    accounts: LookupMap<AccountId, guard::Account>, grants: LookupMap<(AccountId, AccountId), Grant>,
+    used_calls: LookupMap<(AccountId, u64), bool>, positions: IterableMap<u64, Pos>, next_pos: u64, pool: u128, events: Vec<String>,
+}
+
 fn block_s() -> u64 { env::block_timestamp() / 1_000_000_000 }
 
 #[near]
@@ -92,6 +107,20 @@ impl Tape {
             positions: IterableMap::new(b"p"), next_pos: 0, pool: 0, events: Vec::new(),
             tickets: IterableMap::new(b"t"), next_ticket: 0,
         }
+    }
+
+    /// Owner-only, once: the deployed state gains the ticket book.
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate() -> Self {
+        let v1: TapeV1 = env::state_read().unwrap_or_else(|| env::panic_str("no state"));
+        let b = v1.book;
+        let book = calls::Book { grader: b.grader, venue: b.venue, allowlist: b.allowlist, buyers: b.buyers, flat_bp: b.flat_bp,
+            calls: b.calls.into_iter().map(|c| calls::Call { id: c.id, agent: c.agent, market: c.market, side: c.side, commit_hash: c.commit_hash,
+                commit_ts: c.commit_ts, price: c.price, reveal_ts: c.reveal_ts, payload: c.payload, grade: c.grade, fill_id: c.fill_id, fills: Vec::new() }).collect() };
+        Self { usdc: v1.usdc, keeper: v1.keeper, demo: v1.demo, market: v1.market, oracle: v1.oracle, book, accounts: v1.accounts,
+               grants: v1.grants, used_calls: v1.used_calls, positions: v1.positions, next_pos: v1.next_pos, pool: v1.pool, events: v1.events,
+               tickets: IterableMap::new(b"t"), next_ticket: 0 }
     }
 
     // ---------- money in / out ----------
