@@ -6,14 +6,14 @@
 <title>Tape</title>
 <meta name="description" content="Give an agent your money, not your keys. Three taps on NEAR.">
 <style>
-:root{--bg:#07090d;--card:#11151c;--line:#1f2630;--text:#f2f5f9;--dim:#8d97a7;--up:#36d399;--down:#ff5a5a;--accent:#7aa2ff;--phone:#0b0e13}
+:root{--bg:#0f0b06;--card:#211910;--line:#372a19;--text:#ffffff;--dim:#a89d8c;--up:#42db8f;--down:#e66e60;--accent:#ffba33;--phone:#161109}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;display:flex;align-items:center;justify-content:center}
 .phone{width:420px;height:860px;background:var(--phone);border:1px solid var(--line);border-radius:36px;padding:28px 22px 22px;position:relative;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 @media (max-width:460px){body{align-items:stretch}.phone{width:100%;height:100vh;border:0;border-radius:0}}
 .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--dim);margin-bottom:18px}
-.top b{color:var(--text);font-size:17px;letter-spacing:.2px}
+.top b{color:var(--accent);font-size:13px;letter-spacing:2.5px;text-transform:uppercase;font-weight:800}
 .screen{position:absolute;inset:70px 22px 22px;display:none;flex-direction:column}
 .screen.on{display:flex}
 h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
@@ -25,7 +25,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 .card h2{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px}
 .row{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:5px 0;font-variant-numeric:tabular-nums}
 .row span:first-child{color:var(--dim)}
-.btn{margin-top:auto;background:var(--accent);color:#06101f;border:0;border-radius:14px;padding:17px;font-size:17px;font-weight:700;width:100%;transition:transform .12s,filter .12s}
+.btn{margin-top:auto;background:var(--accent);color:#1a1206;border:0;border-radius:14px;padding:17px;font-size:17px;font-weight:700;width:100%;transition:transform .12s,filter .12s}
 .btn.pressed{transform:scale(.97);filter:brightness(1.25)}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
 .bar{display:flex;gap:4px;margin:8px 0 2px}
@@ -69,13 +69,13 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 .ghost{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:13px;color:var(--accent);opacity:0;transition:opacity .5s;pointer-events:none}
 .ghost.on{opacity:1}
 .ghost small{display:block;color:var(--dim);font-size:12px}
-.coin{position:absolute;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8fd3ff,#2f80ed);box-shadow:0 2px 10px rgba(47,128,237,.6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#06101f;opacity:0}
+.coin{position:absolute;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe08a,#ffba33);box-shadow:0 2px 10px rgba(255,186,51,.55);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a1206;opacity:0}
 .coin.go{animation:slide 1.4s ease-in-out forwards}
 .coin.back{animation:slideback 1.4s ease-in-out forwards}
 @keyframes slide{0%{opacity:1;transform:translateX(0)}80%{opacity:1}100%{opacity:0;transform:translateX(var(--dx))}}
 @keyframes slideback{0%{opacity:1;transform:translateX(var(--dx))}80%{opacity:1}100%{opacity:0;transform:translateX(0)}}
 .rule i{transition:background .3s,color .3s}
-.rule.tick i{background:var(--up);color:#06101f}
+.rule.tick i{background:var(--up);color:#0f2a1c}
 .big.bump{animation:bump .6s cubic-bezier(.2,1.6,.4,1)}
 @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
 .fid{width:96px;height:96px;border-radius:26px;border:2.5px solid var(--accent);margin:48px auto 22px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;overflow:hidden}
@@ -198,6 +198,15 @@ function show(n) {
 function press(id) { if (pressed[id]) return; pressed[id] = true; const b = $(id); b.classList.add('pressed'); setTimeout(() => b.classList.remove('pressed'), 450); }
 // the opening: before → after, the record, the builder, Alice — then tap one
 const SPARK = [4.048, 4.03, 4.013, 3.96, 3.984, 3.99, 4.029, 3.993, 4.022, 3.987, 3.997, 4.02, 4.056, 4.087, 4.081, 4.072, 4.08, 4.089, 4.131, 4.15, 4.149, 4.144, 4.177, 4.187, 4.212, 4.225, 4.269, 4.267, 4.258, 4.245, 4.182, 4.218, 4.294, 4.309, 4.293, 4.334, 4.286, 4.284, 4.256, 4.247, 4.292, 4.29, 4.35, 4.33, 4.309, 4.351, 4.339, 4.307, 4.313, 4.352, 4.363, 4.344, 4.357, 4.325, 4.326, 4.368, 4.343, 4.322, 4.326, 4.319, 4.311, 4.317, 4.316, 4.315, 4.3, 4.291, 4.271, 4.251, 4.245, 4.233, 4.276, 4.246, 4.27, 4.286, 4.328, 4.34, 4.378, 4.385, 4.325, 4.295, 4.301, 4.333, 4.33, 4.329, 4.288, 4.29, 4.272, 4.267, 4.27, 4.268, 4.259, 4.278, 4.265, 4.26, 4.245, 4.265, 4.279, 4.295, 4.288, 4.321, 4.346, 4.318, 4.293, 4.307, 4.298, 4.315, 4.294, 4.323, 4.345, 4.325, 4.313, 4.313, 4.308, 4.323, 4.309, 4.305, 4.291, 4.323, 4.314, 4.302, 4.283, 4.305, 4.332, 4.344, 4.341, 4.353, 4.372, 4.354, 4.366, 4.368, 4.343, 4.36, 4.366, 4.346, 4.35, 4.324, 4.312, 4.316, 4.315, 4.296, 4.297, 4.29, 4.309, 4.284, 4.276, 4.29, 4.281, 4.296, 4.308, 4.324, 4.321, 4.343, 4.34, 4.323, 4.354, 4.338, 4.353, 4.343, 4.3, 4.294, 4.321, 4.324, 4.322, 4.316, 4.34, 4.345, 4.324, 4.321, 4.33, 4.318, 4.314, 4.31, 4.312, 4.331, 4.316, 4.316, 4.325, 4.322, 4.324, 4.343, 4.337, 4.334, 4.38, 4.41, 4.421, 4.43, 4.425, 4.397, 4.404, 4.43, 4.406, 4.42, 4.436, 4.447, 4.438, 4.43, 4.428, 4.428, 4.462, 4.457, 4.468, 4.476, 4.501, 4.507, 4.51], MK = {"in1": 5, "out1": 32, "in2": 85, "out2": 202};
+// the record screen holds until the bars have come from the chain, then runs its 8 s
+let introB = 0, barsReady = false, ranB = false;
+function runB() {
+  if (ranB || !introB || !barsReady) return; ranB = true;
+  setTimeout(() => { $('intro-c').style.opacity = 1; }, 4000);
+  setTimeout(() => { $('intro-b').style.display = 'none'; $('intro-d').style.display = ''; }, 8000);
+  setTimeout(() => { $('fid').classList.add('ok'); $('fid').textContent = '✓'; ghost('ghost0', 2200); }, 9700);
+  setTimeout(() => { show(1); }, 12500);
+}
 const ghost = (id, ms = 2600) => { const g = $(id); if (!g) return; g.classList.add('on'); setTimeout(() => g.classList.remove('on'), ms); };
 (() => {
   const W = 376, H = 150, lo = Math.min(...SPARK), hi = Math.max(...SPARK);
@@ -205,12 +214,12 @@ const ghost = (id, ms = 2600) => { const g = $(id); if (!g) return; g.classList.
   const pts = SPARK.map((v, i) => [X(i), Y(v)]);
   const seg = (a, b) => 'M' + pts.slice(a, b + 1).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
   let g = `<defs><clipPath id="cp"><rect id="cpr" x="0" y="0" width="0" height="${H}"/></clipPath></defs>`;
-  g += `<g clip-path="url(#cp)"><path d="${seg(0, SPARK.length - 1)}" fill="none" stroke="#2a3140" stroke-width="2.5"/>`;
+  g += `<g clip-path="url(#cp)"><path d="${seg(0, SPARK.length - 1)}" fill="none" stroke="#3b2f1e" stroke-width="2.5"/>`;
   for (const [a, b] of [[MK.in1, MK.out1], [MK.in2, MK.out2]]) {
-    g += `<path d="${seg(a, b)} L${X(b)},${H} L${X(a)},${H} Z" fill="#36d399" opacity=".12"/><path d="${seg(a, b)}" fill="none" stroke="#36d399" stroke-width="3" stroke-linecap="round"/>`;
-    g += `<circle cx="${X(a)}" cy="${Y(SPARK[a])}" r="5" fill="#0b0e13" stroke="#36d399" stroke-width="2.5"/><circle cx="${X(b)}" cy="${Y(SPARK[b])}" r="5" fill="#36d399"/>`;
-    g += `<text x="${X(a)}" y="${Y(SPARK[a]) + 20}" fill="#8d97a7" font-size="11" text-anchor="middle">in ${SPARK[a].toFixed(2)}</text>`;
-    g += `<text x="${Math.min(X(b), W - 24)}" y="${Y(SPARK[b]) - 10}" fill="#36d399" font-size="11" text-anchor="middle">out ${SPARK[b].toFixed(2)}</text>`;
+    g += `<path d="${seg(a, b)} L${X(b)},${H} L${X(a)},${H} Z" fill="#42db8f" opacity=".14"/><path d="${seg(a, b)}" fill="none" stroke="#42db8f" stroke-width="3" stroke-linecap="round"/>`;
+    g += `<circle cx="${X(a)}" cy="${Y(SPARK[a])}" r="5" fill="#161109" stroke="#42db8f" stroke-width="2.5"/><circle cx="${X(b)}" cy="${Y(SPARK[b])}" r="5" fill="#42db8f"/>`;
+    g += `<text x="${X(a)}" y="${Y(SPARK[a]) + 20}" fill="#a89d8c" font-size="11" text-anchor="middle">in ${SPARK[a].toFixed(2)}</text>`;
+    g += `<text x="${Math.min(X(b), W - 24)}" y="${Y(SPARK[b]) - 10}" fill="#42db8f" font-size="11" text-anchor="middle">out ${SPARK[b].toFixed(2)}</text>`;
   }
   $('spark').innerHTML = g + '</g>';
   const t0 = performance.now(), DRAW = 5000, after = $('after');
@@ -222,11 +231,7 @@ const ghost = (id, ms = 2600) => { const g = $(id); if (!g) return; g.classList.
     if (k < 1) requestAnimationFrame(step); else $('gain').classList.add('on');
   };
   setTimeout(() => requestAnimationFrame(step), 700);
-  setTimeout(() => { $('intro-a').style.display = 'none'; $('intro-b').style.display = ''; }, 8500);
-  setTimeout(() => { $('intro-c').style.opacity = 1; }, 12500);
-  setTimeout(() => { $('intro-b').style.display = 'none'; $('intro-d').style.display = ''; }, 16500);
-  setTimeout(() => { $('fid').classList.add('ok'); $('fid').textContent = '✓'; ghost('ghost0', 2200); }, 18200);
-  setTimeout(() => { show(1); }, 21000);
+  setTimeout(() => { $('intro-a').style.display = 'none'; $('intro-b').style.display = ''; introB = performance.now(); runB(); }, 8500);
 })();
 
 function feedLine(e) {
@@ -268,7 +273,7 @@ async function tick() {
       const html = calls.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join('');
       $('bar').innerHTML = html; $('bar2').innerHTML = html;
       const ten = (await Promise.all(ids.slice(0, 10).map(id => view('call', { id }).catch(() => null)))).filter(Boolean).filter(c => c.grade).sort((a, b) => a.grade.ts - b.grade.ts).slice(-10);
-      if (!$('bar0').children.length) { $('bar0').innerHTML = ten.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join(''); [...$('bar0').children].forEach((b, i) => setTimeout(() => b.classList.add('in'), 100 + 120 * i)); }
+      if (!$('bar0').children.length && ten.length) { $('bar0').innerHTML = ten.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join(''); [...$('bar0').children].forEach((b, i) => setTimeout(() => b.classList.add('in'), 100 + 120 * i)); barsReady = true; runB(); }
     };
     await bars();
     $('rec').textContent = `${rec5[1]} of ${rec5[0]} right`; $('rec2').textContent = `${rec5[1]} of ${rec5[0]} right`;
@@ -316,6 +321,12 @@ async function tick() {
       setTimeout(() => { const c = $('coin2'); c.style.setProperty('--dx', '250px'); c.classList.add('back'); setTimeout(() => { $('cb2').textContent = amt; $('wd').textContent = '$0.00'; ghost('ghost4'); }, 1400); }, 2800); }
   } catch (err) { console.warn(err); }
 }
+(async () => {   // the intro bars first, before the first full tick
+  try { const ev = await view('recent', { n: 80 }); const ids = [...new Set(ev.filter(e => e.event === 'graded').map(e => e.data.id))].slice(0, 10);
+    const ten = (await Promise.all(ids.map(id => view('call', { id }).catch(() => null)))).filter(Boolean).filter(c => c.grade).sort((a, b) => a.grade.ts - b.grade.ts).slice(-10);
+    if (!$('bar0').children.length && ten.length) { $('bar0').innerHTML = ten.map(c => `<i class="${c.grade.outcome[0]}"></i>`).join(''); [...$('bar0').children].forEach((b, i) => setTimeout(() => b.classList.add('in'), 100 + 120 * i)); barsReady = true; runB(); }
+  } catch (e) {}
+})();
 tick(); setInterval(tick, 2500);
 
 // NEAR Intents: a live, dry-run quote (mainnet) — nothing moves.
