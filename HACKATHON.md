@@ -32,11 +32,13 @@ https://nearhackathon.com/HACKATHON.md — tracks used: `security`, `agents` (le
 ## Reproduce
 
 1. `make test` — 33 rule tests and 5 on-chain tests on a local NEAR sandbox.
-2. `make demo` — the recorded night, narrated step by step on a local sandbox: do X, see Y.
-3. `make demo-testnet` — the same story on the testnet deployment (`app.tape-nvibe.testnet`); a recorded run with every
-   explorer link is in `demo/testnet-run-2026-11-02.txt`.
-4. Open `docs/index.html` (or the GitHub Pages site) — the contract's live state on testnet.
+2. `make demo` — the recorded day, narrated step by step on a local sandbox: do X, see Y.
+3. `make demo-testnet` (and `make demo-testnet DAY=night.json`) — the same on the testnet deployment
+   (`app.tape-nvibe.testnet`); recorded runs with every explorer link are in `demo/testnet-run-*.txt`.
+4. Open `docs/index.html` (or the GitHub Pages site) while a testnet run plays — the three-tap flow, read live from the
+   contract. The page is a viewer: the taps you see are the member's own transactions landing (the demo runner signs them
+   with her testnet key); `docs/record.html` is the public record.
 
-The prices are real (NEAR, Oct 29–30, 2026); **the calls in the demo are scripted**, not The Machine's live output. NEAR
-Intents has no testnet, so the page shows a live mainnet dry-run quote for adding funds (nothing moves) and the demo funds
-Alice with test USDC.
+The prices are real (NEAR, Oct 29–31, 2026). The Oct 30 calls are The Machine's registered reads that day; the Oct 29 calls
+are scripted. NEAR Intents has no testnet, so the page shows a live mainnet dry-run quote for adding funds (nothing moves)
+and the demo funds Alice with test USDC. Face ID is a button.

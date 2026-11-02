@@ -13,10 +13,15 @@ The first agent is **The Machine**. Its first markets are NEAR, ZEC and BTC. Fun
 
 ## See it
 
-- **Live on NEAR testnet:** contract [`app.tape-nvibe.testnet`](https://testnet.nearblocks.io/address/app.tape-nvibe.testnet) ·
-  the page: `docs/index.html` (GitHub Pages) reads it live — Alice's balance and freeze line, The Machine's record, every
-  on-chain event, and each call's levels, sealed until its grade.
-- **One full run on testnet, every step with its explorer link:** [`demo/testnet-run-2026-11-02.txt`](demo/testnet-run-2026-11-02.txt).
+Three taps. **Add funds** from Coinbase (any network — NEAR Intents brings it to NEAR). **Hire The Machine** — its record, what it
+sees, and your rules. **Watch** — it trades your money inside your rules, and every line on screen is a NEAR transaction.
+Then **Back to Coinbase**: your money only ever goes to you.
+
+- **The page:** `docs/index.html` (GitHub Pages) — a phone-sized flow that reads the contract live on NEAR testnet
+  ([`app.tape-nvibe.testnet`](https://testnet.nearblocks.io/address/app.tape-nvibe.testnet)); `docs/record.html` is the public record.
+- **Two recorded runs on testnet, every step with its explorer link:** the winning day
+  ([`demo/testnet-run-day-2026-11-02.txt`](demo/testnet-run-day-2026-11-02.txt)) and the night the rules did their job
+  ([`demo/testnet-run-night-2026-11-02.txt`](demo/testnet-run-night-2026-11-02.txt)).
 
 ## Run it
 
@@ -58,20 +63,22 @@ demo/             `make demo`: the recorded night (day.json) played and narrated
 SPEC.md           every rule and every test, written before the code
 ```
 
-## The demo night
+## The two days
 
-Real NEAR prices from Oct 29–30, 2026 — the night BTC lost $80K (NEAR 4.65 → 3.94 → 4.37), 2-minute marks. The calls are
-**scripted demo calls, not The Machine's live output**: the demo shows the protocol, not the agent's edge.
+Real NEAR prices, 2-minute marks, Oct 29–31 2026 — the night BTC lost $80K and the day after. Alice's rules in both:
+Coinbase's margin (42%, at most 2.4x) · a stop on every trade · stops itself at −10% from her peak · only while The Machine's
+record is ≥ 55% of its last 5 · every trade on a published call.
 
-| | When | What happens on chain |
-|---|---|---|
-| Record | 05:01–15:01 | five calls locked before the move and graded four hours later: 4 of 5 right |
-| Policy | 16:01 | Alice deposits $5,000 and grants a policy — NEAR · ≤ 2.5x · stop required · freeze −10% · record ≥ 55% of 5 · published calls only |
-| Call A | 17:01 → 18:47 | long 4.59, The Machine trades it with $3,000 of hers; stop hit at 4.397 → $4,700.91 |
-| Call B | 21:31 → 00:27 | long 4.23 with $2,800; stop hit at 3.972 → **$4,309.53**, under 90% of her $5,000 peak |
-| Call C | 01:31 | **refused on chain: FROZEN** — nothing moves |
-| Grades | +4h each | A wrong, B wrong, C *right* (+7.4%): the freeze kept her out of a third loss *and* out of the bounce — the record shows both |
-| Morning | | she revokes and withdraws $4,309.53 to herself; The Machine keeps the $15 she paid it for calls |
+**`demo/day.json` — Oct 30, the day after.** The two calls are The Machine's registered BTC 24h open-interest reads that day
+(the stop and target levels are the demo's). Alice deposits $5,000 at 00:31. Call 1 (01:01, long 3.99): target 4.30 hit at
+06:31 → $5,454.54. Call 2 (17:01, long 4.29): target 4.50 hit the next afternoon → **$5,757.13**. Both graded Right four
+hours after the reveal. She withdraws to herself.
+
+**`demo/night.json` — Oct 29, the night.** Scripted calls, the night the rules did their job: two stops take her from $5,000
+to $4,309.53, under her −10% line; the third order is **refused on chain: FROZEN**. That call is graded Right four hours
+later — the freeze kept her out of a third loss and out of the bounce, and the record shows both.
+
+`make demo` plays `day.json` on a local sandbox; `make demo-testnet` plays it on testnet; add `night.json` for the night.
 
 ## Status
 

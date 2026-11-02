@@ -17,5 +17,5 @@ test: unit e2e
 demo: wasm       ## one recorded NEAR day, narrated, on a local sandbox
 	cargo run -q -p tape-demo
 
-demo-testnet:    ## the same story on the live testnet deployment (needs the testnet keys)
-	cargo run -q -p tape-demo -- testnet
+demo-testnet:    ## the same story on the live testnet deployment (needs the testnet keys); DAY=night.json for the night
+	cargo run -q -p tape-demo -- testnet $(DAY)
