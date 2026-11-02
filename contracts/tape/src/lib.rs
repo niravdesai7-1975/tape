@@ -138,10 +138,11 @@ impl Tape {
 
     // ---------- the record (calls) ----------
 
-    pub fn commit(&mut self, hash: String, market: String, side: Side, price: U128) -> u64 {
+    /// `note`: the public part of the call — what the agent saw (facts, no levels); the levels stay in the hash.
+    pub fn commit(&mut self, hash: String, market: String, side: Side, price: U128, note: Option<String>) -> u64 {
         let agent = env::predecessor_account_id();
         let id = self.book.commit(agent.as_str(), &hash, &market, side.c(), price.0, self.now()).unwrap_or_else(|e| env::panic_str(&format!("{e:?}")));
-        self.emit("committed", near_sdk::serde_json::json!({"id": id, "agent": agent, "market": market, "side": side, "hash": hash}));
+        self.emit("committed", near_sdk::serde_json::json!({"id": id, "agent": agent, "market": market, "side": side, "hash": hash, "note": note}));
         id
     }
 

@@ -89,7 +89,7 @@ async fn call_out(e: &Env, side: &str, levels: &str) -> anyhow::Result<(u64, Str
     let payload = format!(r#"{{"market":"NEAR","side":"{side}",{levels}}}"#);
     let hash = tape_calls::hash_hex(&payload);
     let id: u64 = e.machine.call(e.tape.id(), "commit")
-        .args_json(json!({"hash": hash, "market": "NEAR", "side": side, "price": (5 * D).to_string()}))
+        .args_json(json!({"hash": hash, "market": "NEAR", "side": side, "price": (5 * D).to_string(), "note": null}))
         .transact().await?.json()?;
     e.machine.call(e.tape.id(), "reveal").args_json(json!({"id": id})).transact().await?.into_result()?;
     Ok((id, payload))
