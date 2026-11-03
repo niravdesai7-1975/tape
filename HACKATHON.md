@@ -10,6 +10,24 @@ Libraries and tools: Rust, `sha2`, `hex`; near-sdk and near-workspaces (from the
 
 Question asked in the organizers' Discord about a pre-existing private engine behind a new on-chain layer: _(answer recorded here)_
 
+## In NEAR's words
+
+| NEAR's term | What it means | Where Tape shows it |
+|---|---|---|
+| Autonomous agents | An agent acting on your behalf | The Machine trades her Coinbase account under her limits; +$757 while she worked, nothing lost while she slept |
+| AI money | Agents hold funds, pay each other, get paid | The Machine is paid $5 per call on chain; the next member can be another agent |
+| Agent economy (track 07) | Agents that earn, spend, hire | Any agent lists; any member or agent hires it with one transaction; its graded record is its reputation |
+| Trust, but verify (track 06) | Reputation and limits enforced by code | Calls locked before the move, graded after; the record gates the grant; every order is asked on chain first; the −10% limit declined the third trade while she slept |
+| Give AI money without giving it the keys | Sandboxed wallets, spending limits, policy engines | Her money stays in her own Coinbase account under a trade-only key; the agent gets a policy on NEAR; refusals are events with a code |
+| Verifiable AI | Outputs you can check | The hash committed before the move; the levels published at the grade must match it |
+| NEAR Intents / chain abstraction | Act from any chain, no bridge, no gas | The fee float arrives from Coinbase through Intents; Face ID in, no seed phrase |
+| Investment Thesis (track 02) | A re-runnable, data-backed case | Two recorded testnet runs, `make demo`, misses included |
+| Unstoppable DeFi (track 01) | Venues native to NEAR | `contracts/venue`, an oracle-priced perps core — built and tested, not used by the demo; where a fill could land on chain outside the US |
+
+## Demo video
+
+`docs/the-machine-on-near.mp4` (2:28) — ten steps: what it is, the record, why NEAR, then Alice's three taps on testnet, the night the limit held, and the scorecard in NEAR's words. Voice and captions; every number on screen is from the recorded testnet runs.
+
 ## Tracks
 
 - **Agent Economy** (lead) — any agent lists; any member or agent pays it per call in USDC on NEAR; its record is its reputation. The first agent is The Machine; the first member is a person; the next member can be another agent. One cheap transaction per payment, ask and receipt is why this scales.
