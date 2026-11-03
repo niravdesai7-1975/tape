@@ -40,7 +40,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
 .feed li{display:grid;grid-template-columns:46px 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
 .feed li:first-child{border-top:0}
 .feed time{color:var(--dim);font-variant-numeric:tabular-nums}
-.feed a{color:inherit;text-decoration:none}
+.feed a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--line)}.feed a[href*="/txns/"]::after{content:" ↗";color:var(--dim);font-size:11px}
 .feed a:hover{text-decoration:underline}
 .feed .bad{color:var(--down);font-weight:700}.feed .good{color:var(--up)}
 .banner{background:color-mix(in srgb,var(--down) 18%,transparent);border:1px solid var(--down);color:var(--down);border-radius:14px;padding:12px 14px;font-weight:700;margin-top:12px;display:none}
@@ -210,6 +210,20 @@ let screen = 0, ts0 = null, deposit = 0, pressed = {};
 // replays the most recent recorded run on the contract: each tap reveals the next real on-chain events.
 const LIVE = q.has('live') || q.has('from');
 let cursor = 0, runLen = 0, revokeAt = -1, autoTimer = null;
+// the recorded runs' transaction hashes, in order (from demo/testnet-run-*.txt): each feed line links to its own transaction
+const RUNS = {"day":[{"kind":"deposit","tx":"Hup2d9gPwh6M8unmNRc3jmPGD2GZRmvsN9W7asKEM7hq"},{"kind":"committed","tx":"BPsT9MzsLNwHvJw79YRHeb9CMVRHQy6gmvmE72Z3HzWS"},{"kind":"granted","tx":"D3BdsiJ7CmKvuxBMcmW24z5T8dUrfkcuJRWzYrNksW3y"},{"kind":"bought","tx":"8rDsScdsxSHqx8yZnD8QB2AdjuvnKvGMRDVKiqot7YAs"},{"kind":"asked","tx":"GFaiv5Eji8sMeqfGVhQVvVjLv9LLPcAeANtg2e2DmTxX"},{"kind":"filled","tx":"J4yPjHLGe7TqkHaSg2YBpgRmjcNPrSUpHD5PgvnQtRFN"},{"kind":"graded","tx":"8QLDh7jKohACQGFiEtpGvmcuZdVJKdy2YV2uwpd13hN2"},{"kind":"filled","tx":"DxQiKXghMdjbxsabqFbYP2rFajNfygkMxVfGGs5pKeZS"},{"kind":"committed","tx":"FABM7mUzmyRoFqMNak8HG2w54GnQGnaScoCRjJeRNWdQ"},{"kind":"bought","tx":"5deRUPszqBTNYsEFax7Q9CNruKA9xNPY54wmqLbLJKXz"},{"kind":"asked","tx":"CBtw7YMGdMJWS2ZyRD1WD3JKgEev9AUmVb3N7T5nS3Lg"},{"kind":"filled","tx":"F1vBDEX4XmNaYxh9ktueZtuKLTHgy9rQUVBdbGjjNkJS"},{"kind":"graded","tx":"A4EDqxi5zrp9j68VRkgxks1XZLNNrCSAp4RuvhbfDTwt"},{"kind":"filled","tx":"BXsaetJuf4VqogmSGnxHPPUhekrvJTyJPxdKeDiZ11o1"},{"kind":"revoked","tx":"AZnNC4RLb7tBH8KHfRSf5SVpH2knqWwRfB2vKdCqqcfr"}],"night":[{"kind":"deposit","tx":"DDwbEqwgm5qDgTksc3HSjMd9Li1CsGcnJf7KE2AeBqUd"},{"kind":"committed","tx":"A9D7xhqCzCjJAmQnyu1goLgHMsQYRyJBu2gjfoHch7zL"},{"kind":"granted","tx":"B3dJW6bhoAfqVeaPEAPx7dLugD3KtseBFc5cGUX2N1bS"},{"kind":"bought","tx":"8miG2U3VwvbYGiPj55hhbmBCXXu27spUtBxcz2798tj9"},{"kind":"asked","tx":"8w711bXiyoA8rrRm64qo7D1tDEkkbFmn5qBghVUpr1Fp"},{"kind":"filled","tx":"2ZBNXduDi8XkgubmyuwNotL8RGCKBuACCxKrKrxSzJnd"},{"kind":"filled","tx":"4JrwvaVFjg6STTYBWpxzv5NPzz91qWLgeJh7Pn1XRxmf"},{"kind":"graded","tx":"4UHg7tgseCM6eJzUzVHED8MZ7asidAWgNGRRkUybGkpE"},{"kind":"committed","tx":"717djd78CpBVjfXqVNm4JtHYPzLLYbVSb7rzQwGVQxuq"},{"kind":"bought","tx":"3NBCSXLn7iyBJLrovsQVzr5a7KFv1wai6YBdyEUySpT1"},{"kind":"asked","tx":"DvKBvDqfKwHEFcGCfoLBB15mJsLoyfj4rJuzBMfS78Rv"},{"kind":"filled","tx":"68aHXGcZD4rpeAkG5sd6JVYqxgvuTjkiGwtaRUvNfmam"},{"kind":"filled","tx":"3RieDGKAVQ5iiekLNumk3xgxjLEQguG2RN8pHua2bo5L"},{"kind":"graded","tx":"CabcUcLuvXavZYjZKJw1yoMaud9dcUKguWG2n5XPseQc"},{"kind":"committed","tx":"BgzCNjnbDTWqgqkKWQqiLXzkHKP73qNfPjZJzfzKog67"},{"kind":"bought","tx":"7DadGNK9chKSu2WbGMgnHZbyNyHn3huTGwsuovbxTXH6"},{"kind":"refused","tx":"D3Bq3y9CyQFZurzD4NEsmAuQgiu7YzHvw5F3Z8D8e1dt"},{"kind":"graded","tx":"6qQ44opqzkSBg5yyocLSRKyhsuX7PUfunhMqADE96jk9"},{"kind":"revoked","tx":"AU2oCgx5o28EmReGeVzDWAvCnF33esBbbtDeUqRcHqf1"}]};
+function attachTx(oldestFirst) {
+  const night = oldestFirst.some(e => e.event === 'refused');
+  const txs = RUNS[night ? 'night' : 'day']; if (!txs) return;
+  let k = 0;
+  for (const e of oldestFirst) {
+    const kind = e.event === 'frozen' ? null : e.event;                       // frozen rides inside the fill that caused it
+    if (!kind || kind === 'revealed') continue;
+    const j = txs.findIndex((t, i) => i >= k && t.kind === kind);
+    if (j >= 0) { e.tx = txs[j].tx; k = j + 1; }
+  }
+  for (let i = 0; i < oldestFirst.length; i++) if (oldestFirst[i].event === 'frozen' && i > 0) oldestFirst[i].tx = oldestFirst[i - 1].tx;
+}
 const advanceTo = (n) => { cursor = Math.max(cursor, Math.min(n, runLen)); tick(); };
 if (!LIVE) {
   $('b1').onclick = () => advanceTo(1);
@@ -292,6 +306,7 @@ async function tick() {
     const depIdx = LIVE ? fresh.map(e => e.event).lastIndexOf('deposit') : fresh.map(e => e.event).indexOf('deposit');
     const all = (depIdx < 0 ? [] : fresh.slice(0, depIdx + 1)).filter(e => !e.data || ((!e.data.owner || e.data.owner === MEMBER) && (!e.data.member || e.data.member === MEMBER)));
     let mine = all;
+    attachTx([...all].reverse());
     if (!LIVE) {
       // oldest first: deposit, committed, granted, bought, asked, filled … revoked. The taps reveal it in order.
       const old = [...all].reverse();
