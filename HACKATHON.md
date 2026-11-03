@@ -53,9 +53,10 @@ https://nearhackathon.com/HACKATHON.md — tracks used: `agents` (lead), `securi
 2. `make demo` — the recorded day, narrated step by step on a local sandbox: do X, see Y.
 3. `make demo-testnet` (and `make demo-testnet DAY=night.json`) — the same on the testnet deployment
    (`app.tape-nvibe.testnet`); recorded runs with every explorer link are in `demo/testnet-run-*.txt`.
-4. Open `docs/index.html` (or the GitHub Pages site) while a testnet run plays — the three-tap flow, read live from the
-   contract. The page is a viewer: the taps you see are the member's own transactions landing (the demo runner signs them
-   with her testnet key); `docs/record.html` is the public record.
+4. Open the GitHub Pages site (or `docs/index.html`): the three-tap flow. By default the page replays the most recent
+   recorded run from the contract's own event log — each tap reveals the next real on-chain events, every line a real
+   transaction. With `?live`, the page is a viewer and the taps are the member's own transactions landing as
+   `make demo-testnet` plays (the runner signs them with her testnet key). `docs/record.html` is the public record.
 
 What lives where: on NEAR, the fee float (Intents), the pay per call, the member's rules, every ask, every fill's receipt,
 every refusal and the graded record. On Coinbase: her money and the fills, under a trade-only API key. We do not offer US

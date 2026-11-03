@@ -161,6 +161,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
     <div class="banner" id="ban"></div>
     <div class="card" id="poscard" style="display:none"><h2 id="poshead">Open trade</h2><div class="pos"><div><b id="p-entry">—</b><span>filled</span></div><div><b id="p-stop">—</b><span>stop</span></div><div><b id="p-target">—</b><span>margin</span></div></div></div>
     <div class="card" style="flex:1;min-height:0;display:flex;flex-direction:column"><h2>On chain · tap any line to verify</h2><ul class="feed" id="feed"></ul></div>
+    <button class="btn" id="b3" style="display:none" onclick="advanceTo(revokeAt + 1)">Revoke The Machine</button>
     <div class="ghost" id="ghost3">ask → fill → receipt<small>one contract</small></div>
   </section>
 
@@ -192,6 +193,7 @@ const usd = (v) => '$' + (Number(v) / 1e6).toLocaleString('en-US', { minimumFrac
 const px = (v) => (Number(v) / 1e6).toFixed(3);
 const hhmm = (ts) => { const s = Number(ts) % 86400; return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0'); };
 $('net').textContent = NET + ' · ' + CONTRACT;
+if (!(new URLSearchParams(location.search).has('live'))) $('net').textContent = 'replaying the Oct 30 testnet run · tap to step';
 
 let rpcAt = 0;
 async function view(method, args = {}, tries = 0) {
@@ -204,6 +206,15 @@ async function view(method, args = {}, tries = 0) {
 
 // screens: 0 sign in → 1 add funds → 2 hire → 3 live → 4 back to Coinbase. Each advance is a real on-chain event.
 let screen = 0, ts0 = null, deposit = 0, pressed = {};
+// Live (?live): the taps are the member's own transactions landing (the demo runner signs them). Otherwise the page
+// replays the most recent recorded run on the contract: each tap reveals the next real on-chain events.
+const LIVE = q.has('live') || q.has('from');
+let cursor = 0, runLen = 0, revokeAt = -1, autoTimer = null;
+const advanceTo = (n) => { cursor = Math.max(cursor, Math.min(n, runLen)); tick(); };
+if (!LIVE) {
+  $('b1').onclick = () => advanceTo(1);
+  $('b2').onclick = () => advanceTo(window.hireAt || 1);
+}
 function show(n) {
   if (n === screen) return; screen = n;
   document.querySelectorAll('.screen').forEach((s, i) => s.classList.toggle('on', i === n));
@@ -275,12 +286,24 @@ async function tick() {
     const [acct, grant, rec5, events] = await Promise.all([
       view('account', { owner: MEMBER }), view('grant_of', { owner: MEMBER, agent: AGENT }),
       view('record', { agent: AGENT, window_n: 5 }), view('recent', { n: 80 })]);
-    if (ts0 === null) ts0 = q.get('from') ? Number(q.get('from')) : (events.length ? Math.max(...events.map(e => Number(e.ts))) : 0);
-    // `recent` is newest first. Her night = everything from her deposit on (and only her account's lines)
+    if (ts0 === null) ts0 = !LIVE ? 0 : q.get('from') ? Number(q.get('from')) : (events.length ? Math.max(...events.map(e => Number(e.ts))) : 0);
+    // `recent` is newest first. Her day = everything from her deposit on (and only her account's lines)
     const fresh = events.filter(e => Number(e.ts) > ts0);
-    const depIdx = fresh.map(e => e.event).lastIndexOf('deposit');
-    const mine = (depIdx < 0 ? [] : fresh.slice(0, depIdx + 1)).filter(e => !e.data || ((!e.data.owner || e.data.owner === MEMBER) && (!e.data.member || e.data.member === MEMBER)))
-      ;
+    const depIdx = LIVE ? fresh.map(e => e.event).lastIndexOf('deposit') : fresh.map(e => e.event).indexOf('deposit');
+    const all = (depIdx < 0 ? [] : fresh.slice(0, depIdx + 1)).filter(e => !e.data || ((!e.data.owner || e.data.owner === MEMBER) && (!e.data.member || e.data.member === MEMBER)));
+    let mine = all;
+    if (!LIVE) {
+      // oldest first: deposit, committed, granted, bought, asked, filled … revoked. The taps reveal it in order.
+      const old = [...all].reverse();
+      runLen = old.length;
+      const g = old.findIndex(e => e.event === 'granted'), b = old.findIndex((e, i) => i > g && e.event === 'bought');
+      window.hireAt = (b > 0 ? b : g) + 1;
+      revokeAt = old.findIndex(e => e.event === 'revoked');
+      mine = all.slice(all.length - cursor);
+      // on the live screen the day plays itself, one line at a time, up to the revoke — which is her tap
+      if (screen === 3 && cursor >= window.hireAt && (revokeAt < 0 || cursor < revokeAt) && !autoTimer) autoTimer = setTimeout(() => { autoTimer = null; advanceTo(cursor + 1); }, 1800);
+      $('b3').style.display = (screen === 3 && revokeAt >= 0 && cursor >= revokeAt) ? '' : 'none';
+    }
     const has = (k) => mine.some(e => e.event === k);
     // record
     const bars = async () => {
@@ -318,10 +341,12 @@ async function tick() {
     if (deposit) { $('dl').textContent = `${d >= 0 ? '+' : '−'}${usd(Math.abs(d))} since you hired it`; $('dl').className = 'delta ' + (d >= 0 ? 'up' : 'down'); }
     const refused = mine.find(e => e.event === 'refused');
     const lastEv = mine[0];
-    $('ban').classList.toggle('on', !!refused && lastEv && (lastEv.event === 'refused' || acct.frozen));
+    const frozen = LIVE ? acct.frozen : (has('frozen') && !has('unfrozen'));
+    const revoked = LIVE ? !(grant && !grant.revoked) : has('revoked');
+    $('ban').classList.toggle('on', !!refused && lastEv && (lastEv.event === 'refused' || frozen));
     if (refused) $('ban').textContent = `REFUSED ON CHAIN: ${refused.data.code} — no order went to Coinbase. She was asleep.`;
-    $('st').innerHTML = acct.frozen ? 'FROZEN <span class="moon">🌙</span>' : (grant && !grant.revoked ? 'THE MACHINE IS TRADING' : 'REVOKED');
-    $('st').className = 'pill ' + (acct.frozen ? 'bad' : 'ok');
+    $('st').innerHTML = frozen ? 'FROZEN <span class="moon">🌙</span>' : (!revoked ? 'THE MACHINE IS TRADING' : 'REVOKED');
+    $('st').className = 'pill ' + (frozen ? 'bad' : 'ok');
     // the open trade: the last ask whose ticket has an open receipt and no close yet
     const lastAsk = mine.find(e => e.event === 'asked');
     const fills = lastAsk ? mine.filter(e => e.event === 'filled' && e.data.ticket === lastAsk.data.ticket) : [];
