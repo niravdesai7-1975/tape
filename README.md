@@ -30,6 +30,7 @@ receipt, every refusal, and the graded record. On Coinbase: the member's money a
 We do not offer US perps on NEAR. (`contracts/venue`, an oracle-priced perps core, is kept for markets where the fill
 itself can be on chain; the demo does not use it.)
 
+- **The video:** [`docs/the-machine-on-near.mp4`](docs/the-machine-on-near.mp4) (2:28) — the three taps, the night, and the scorecard in NEAR's words.
 - **The page:** `docs/index.html` (GitHub Pages) — a phone-sized flow that reads the contract live on NEAR testnet
   ([`app.tape-nvibe.testnet`](https://testnet.nearblocks.io/address/app.tape-nvibe.testnet)); `docs/record.html` is the public record.
 - **Two recorded runs on testnet, every step with its explorer link:** the winning day
