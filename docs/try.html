@@ -114,7 +114,8 @@ async function init() {
   for (const id in KEYS) acct[id] = await near.account(id);
 }
 async function call(who, contractId, methodName, args, deposit = '0') {
-  const r = await acct[who].functionCall({ contractId, methodName, args, gas: GAS, attachedDeposit: BigInt(deposit) });
+  const gas = methodName === 'ft_transfer_call' ? GAS : BigInt(30e12);   // small prepaid gas: the throwaway accounts last longer
+  const r = await acct[who].functionCall({ contractId, methodName, args, gas, attachedDeposit: BigInt(deposit) });
   const v = r.status && r.status.SuccessValue !== undefined && r.status.SuccessValue !== '' ? JSON.parse(atob(r.status.SuccessValue)) : null;
   return { tx: r.transaction.hash, value: v };
 }
@@ -190,9 +191,17 @@ const CAPS = [
   "In the morning, Alice is done. One tap: revoke. Watch The Machine try one more time. Refused. It's out. And her money never left Coinbase.",
   "That's it. Now it's your turn. Five taps, and every one of them is real.",
 ];
+// one voice element, unlocked by the tap, reused for every line (Safari and phones block new audio started later)
+const LEN = [8.5, 6.6, 7.7, 12.2, 8.9, 7.2, 8.1, 3.9];
+const voice = new Audio(); voice.preload = 'auto';
 const say = (i) => new Promise((res) => {
   $('cap').style.display = ''; $('cap').textContent = CAPS[i];
-  const a = new Audio(`voice/g${i}.mp3`); a.onended = res; a.onerror = res; a.play().catch(res);
+  let done = false; const finish = () => { if (!done) { done = true; res(); } };
+  const t = setTimeout(finish, (LEN[i] + 1.5) * 1000);                 // never cut a line short, never hang
+  voice.onended = () => { clearTimeout(t); finish(); };
+  voice.onerror = () => {};                                             // a failed clip: the caption still holds for its length
+  voice.src = `voice/g${i}.mp3`; voice.currentTime = 0;
+  voice.play().catch(() => {});
 });
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function rpc(method, params) {
@@ -223,6 +232,7 @@ const fadeMusic = (to, ms) => new Promise(res => { const from = music.volume, t0
   const step = (now) => { const k = Math.min(1, (now - t0) / ms); music.volume = from + (to - from) * k; k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
 async function guide() {
   if (guiding) return; guiding = true; $('guide').style.display = 'none';
+  voice.src = 'voice/g0.mp3'; voice.play().then(() => voice.pause()).catch(() => {});   // unlock inside the tap
   $('feed').innerHTML = ''; $('verify').style.display = 'none'; at = 0; render(); if ($('go')) $('go').disabled = true;
   music.currentTime = 0; music.volume = 0; music.play().catch(() => {}); fadeMusic(0.35, 1500);
   try {
@@ -242,7 +252,13 @@ async function guide() {
   $('guide').textContent = '▶ Watch it again'; $('guide').style.display = ''; guiding = false;
 }
 $('guide').onclick = guide;
-init().then(render).catch(e => line('could not connect to testnet: ' + e.message, null, 'bad'));
+async function gasCheck() {
+  for (const id of [ALICE, MACHINE]) {
+    const b = Number((await acct[id].getAccountBalance()).available) / 1e24;
+    if (b < 0.1) line(`The demo account ${id.split('.')[0]} is low on testnet gas (${b.toFixed(3)} NEAR) — a run may stop partway. The recorded run at index.html always works.`, null, 'bad');
+  }
+}
+init().then(() => { render(); gasCheck(); }).catch(e => line('could not connect to testnet: ' + e.message, null, 'bad'));
 </script>
 </body>
 </html>
