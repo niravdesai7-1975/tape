@@ -90,6 +90,9 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
   <div class="top"><b>The Machine</b><span id="net">testnet · your own transactions</span></div>
   <h1>Try it. Five taps.</h1>
   <p class="sub">Each tap signs a real NEAR testnet transaction from a throwaway judge account. Every line links to it.</p>
+  <button class="btn" id="guide" style="margin:4px 0 10px">▶ Watch it run once · 1 min, with sound</button>
+  <div id="cap" style="display:none;margin:2px 0 10px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);font-size:15px;line-height:1.4;color:var(--text)"></div>
+  <div id="verify" class="card" style="display:none;border-color:var(--up)"></div>
   <div id="steps"></div>
   <div class="card" style="flex:1;min-height:0;display:flex;flex-direction:column"><h2>On chain · tap any line to verify</h2><ul class="feed" id="feed"></ul></div>
   <p class="note" style="margin-top:8px">Throwaway accounts <b>judge-alice</b> and <b>judge-machine</b>.tape-nvibe.testnet — their keys are in this page on purpose. Coinbase fills are simulated at the recorded Oct 30 prices. <a href="index.html" style="color:var(--accent)">The recorded run →</a></p>
@@ -146,7 +149,7 @@ const STEPS = [
     const r = await call(MACHINE, CONTRACT, 'ask', { owner: ALICE, market: 'NEAR', side: 'Long', qty: 3, collateral: String(3000 * D), notional: String(5986500000),
       stop_px: 3850000, call_id: S.call, equity: String(5000 * D) });
     if (r.value.refused) { line('REFUSED ON CHAIN: ' + r.value.refused, r.tx, 'bad'); return; }
-    S.ticket = r.value.ticket; line(`Chain clears the order: 3 ct long · $3,000 margin · stop 3.850 (ticket #${S.ticket})`, r.tx);
+    S.askTx = r.tx; S.ticket = r.value.ticket; line(`Chain clears the order: 3 ct long · $3,000 margin · stop 3.850 (ticket #${S.ticket})`, r.tx);
     const f = await call(MACHINE, CONTRACT, 'fill', { owner: ALICE, ticket: S.ticket, venue: 'coinbase', order_ref: `judge-${S.run}-open`, kind: 'Open', px: 3991000, pnl: null, equity: String(5000 * D) });
     line('Coinbase fills at 3.991 · receipt on chain', f.tx);
     const c = await call(MACHINE, CONTRACT, 'fill', { owner: ALICE, ticket: S.ticket, venue: 'coinbase', order_ref: `judge-${S.run}-close`, kind: 'Close', px: 4299000, pnl: '454540000', equity: '5454540000' });
@@ -161,9 +164,12 @@ const STEPS = [
     if (r.value.refused) line(`DECLINED ON CHAIN: ${r.value.refused} — $4,310 is under your −10% line. No order went to Coinbase.`, r.tx, 'bad');
     else line('allowed (unexpected)', r.tx);
   }],
-  ['Revoke', 'One tap. The Machine is out; your money never moved.', async () => {
-    const r = await call(ALICE, CONTRACT, 'revoke', { agent: MACHINE }); line('You revoked The Machine', r.tx);
+  ['Revoke', 'Take back The Machine\'s permission. It tries once more and is refused on chain. Your money never moved.', async () => {
+    const r = await call(ALICE, CONTRACT, 'revoke', { agent: MACHINE }); line('You revoked The Machine — its permission is gone, on chain', r.tx);
     try { await call(ALICE, CONTRACT, 'unfreeze_at', { equity: String(5000 * D) }); } catch (e) {}
+    const t = await call(MACHINE, CONTRACT, 'ask', { owner: ALICE, market: 'NEAR', side: 'Long', qty: 1, collateral: String(1000 * D), notional: String(1980 * D),
+      stop_px: 3800000, call_id: S.call2, equity: String(5000 * D) });
+    line(`The Machine tries one more trade: ${t.value && t.value.refused ? 'REFUSED ON CHAIN: ' + t.value.refused : 'allowed (unexpected)'}`, t.tx, 'bad');
     line('Your Coinbase balance: $5,454.54 — it never left. The Machine was paid $10 on NEAR.', null, 'good');
   }],
 ];
@@ -173,6 +179,69 @@ function render() {
     ${i === at ? `<button class="btn" id="go" style="width:auto;padding:10px 18px;margin:0 0 0 10px;flex:none">Tap</button>` : i < at ? '<span class="pill ok" style="flex:none">done</span>' : ''}</div></div>`).join('');
   const b = $('go'); if (b) b.onclick = async () => { b.disabled = true; b.textContent = 'signing…'; try { await STEPS[at][2](); at++; } catch (e) { line('failed: ' + (e.message || e).slice(0, 600), null, 'bad'); console.log('FAIL', (e.message || e).slice(0, 900)); b.disabled = false; b.textContent = 'retry'; return; } render(); };
 }
+// ---- the guided run: the page taps the five steps itself, on live testnet, and tells the story ----
+const CAPS = [
+  "Let me walk you through it once. This is Alice's account, on NEAR testnet. Everything you're about to see is really happening on chain, right now.",
+  "First, she connects Coinbase. Her money stays right there. Only $20 comes over to NEAR, to pay for calls.",
+  "Then she hires The Machine. $5 a call. And she writes her rules on chain: a stop on every trade, and shut it down if I'm ever down 10%.",
+  "Now The Machine wants to trade. But it can't just do it. It has to ask the chain first. The chain checks her rules and says yes. Coinbase fills. The target hits. $454, for Alice.",
+  "And here's the part I love. You don't have to trust me. This is that exact transaction, pulled straight from NEAR. Who signed it, what it asked for, when. Anyone can check it.",
+  "Now imagine a bad night. She's down 10%, and she's asleep. The Machine asks to trade again. Declined. The order never reaches Coinbase.",
+  "In the morning, Alice is done. One tap: revoke. Watch The Machine try one more time. Refused. It's out. And her money never left Coinbase.",
+  "That's it. Now it's your turn. Five taps, and every one of them is real.",
+];
+const say = (i) => new Promise((res) => {
+  $('cap').style.display = ''; $('cap').textContent = CAPS[i];
+  const a = new Audio(`voice/g${i}.mp3`); a.onended = res; a.onerror = res; a.play().catch(res);
+});
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+async function rpc(method, params) {
+  const r = await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+  return (await r.json()).result;
+}
+async function showVerify(tx) {
+  const v = $('verify'); v.style.display = ''; v.innerHTML = '<h2>Verifying on chain…</h2>';
+  try {
+    let t = null;
+    for (let k = 0; k < 6 && !(t && t.transaction); k++) { if (k) await sleep(1500); t = await rpc('tx', { tx_hash: tx, sender_account_id: MACHINE, wait_until: 'EXECUTED' }); }
+    const fc = t.transaction.actions[0].FunctionCall, args = JSON.parse(atob(fc.args));
+    const b = await rpc('block', { block_id: t.transaction_outcome.block_hash });
+    const when = new Date(b.header.timestamp / 1e6).toUTCString().slice(17, 25);
+    const ok = t.status && t.status.SuccessValue !== undefined;
+    v.innerHTML = `<h2 style="color:var(--up)">Verified · straight from NEAR</h2>
+      <div class="row"><span>Signed by</span><b>judge-machine</b></div>
+      <div class="row"><span>Asked</span><b>${fc.method_name}: ${args.qty} ct ${args.side.toLowerCase()} · $${(args.collateral / 1e6).toLocaleString()} margin · stop ${(args.stop_px / 1e6).toFixed(2)}</b></div>
+      <div class="row"><span>Her balance it reported</span><b>$${(args.equity / 1e6).toLocaleString()}</b></div>
+      <div class="row"><span>Result</span><b style="color:var(--up)">${ok ? 'cleared · ticket #' + JSON.parse(atob(t.status.SuccessValue)).ticket : 'see explorer'}</b></div>
+      <div class="row"><span>Block</span><b>#${b.header.height.toLocaleString()} · ${when} UTC</b></div>
+      <a href="${EXPLORER + tx}" target="_blank" rel="noopener" style="color:var(--accent);font-size:13px">Open it on the explorer ↗</a>`;
+  } catch (e) { v.innerHTML = `<h2>On chain</h2><a href="${EXPLORER + tx}" target="_blank" rel="noopener" style="color:var(--accent)">Open the transaction ↗</a>`; }
+}
+let guiding = false;
+const music = new Audio('voice/bgm.mp3'); music.loop = true;
+const fadeMusic = (to, ms) => new Promise(res => { const from = music.volume, t0 = performance.now();
+  const step = (now) => { const k = Math.min(1, (now - t0) / ms); music.volume = from + (to - from) * k; k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+async function guide() {
+  if (guiding) return; guiding = true; $('guide').style.display = 'none';
+  $('feed').innerHTML = ''; $('verify').style.display = 'none'; at = 0; render(); if ($('go')) $('go').disabled = true;
+  music.currentTime = 0; music.volume = 0; music.play().catch(() => {}); fadeMusic(0.35, 1500);
+  try {
+    await say(0);
+    for (let i = 0; i < 5; i++) {
+      render(); const b = $('go'); if (b) { b.disabled = true; b.textContent = 'signing…'; b.classList.add('pressed'); }
+      const voice = say(i < 3 ? i + 1 : i + 2);
+      await STEPS[i][2](); at++; render(); if ($('go')) $('go').disabled = true;
+      await voice;
+      if (i === 2) { const v2 = say(4); await showVerify(S.askTx); await v2; await sleep(1500); $('verify').style.display = 'none'; }
+    }
+    await say(7);
+  } catch (e) { line('the guided run stopped: ' + (e.message || e).slice(0, 200), null, 'bad'); }
+  await fadeMusic(0, 2500); music.pause();
+  $('cap').style.display = 'none'; $('verify').style.display = 'none';
+  at = 0; render(); $('feed').prepend(Object.assign(document.createElement('li'), { innerHTML: '<time></time><a class="good">↑ The guided run is below. Your turn: tap 1.</a>' }));
+  $('guide').textContent = '▶ Watch it again'; $('guide').style.display = ''; guiding = false;
+}
+$('guide').onclick = guide;
 init().then(render).catch(e => line('could not connect to testnet: ' + e.message, null, 'bad'));
 </script>
 </body>

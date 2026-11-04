@@ -53,10 +53,12 @@ https://nearhackathon.com/HACKATHON.md — tracks used: `agents` (lead), `securi
 2. `make demo` — the recorded day, narrated step by step on a local sandbox: do X, see Y.
 3. `make demo-testnet` (and `make demo-testnet DAY=night.json`) — the same on the testnet deployment
    (`app.tape-nvibe.testnet`); recorded runs with every explorer link are in `demo/testnet-run-*.txt`.
-4. **Try it in five taps, no setup:** https://niravdesai7-1975.github.io/tape/try.html — each tap signs a real testnet
+4. **Try it in five taps, no setup:** https://niravdesai7-1975.github.io/tape/try.html — tap “Watch it run once” for a
+   one-minute guided run (the page taps the five steps itself, narrated, and pulls one transaction straight from NEAR to
+   show it verified), then do it yourself. Each tap signs a real testnet
    transaction from the throwaway accounts `judge-alice` / `judge-machine.tape-nvibe.testnet` (their keys are in the page on
    purpose): the fee float arrives, the rules go on chain and $5 is paid for a call, the chain clears an order and the
-   Coinbase receipts land, a −10% report gets the next order DECLINED (FROZEN), revoke. Every line links to its transaction.
+   Coinbase receipts land, a −10% report gets the next order DECLINED (FROZEN), revoke — and The Machine's next try comes back REVOKED. Every line links to its transaction.
 5. Open the GitHub Pages site (or `docs/index.html`): the three-tap flow. By default the page replays the most recent
    recorded run from the contract's own event log — each tap reveals the next real on-chain events, every line a real
    transaction. With `?live`, the page is a viewer and the taps are the member's own transactions landing as
