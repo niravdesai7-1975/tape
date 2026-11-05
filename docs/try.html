@@ -132,6 +132,7 @@ const policy = { markets: ['NEAR'], max_qty: 4, max_collateral: 3500 * D, max_ex
 const S = { call: null, call2: null, ticket: null, run: String(Date.now()).slice(-6) };
 const STEPS = [
   ['Connect Coinbase', 'Your money stays there. $20 of test USDC comes to NEAR as your fee float.', async () => {
+    S.run = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // a fresh run every time: a call is never committed twice
     try { await call(ALICE, CONTRACT, 'unfreeze_at', { equity: String(5000 * D) }); } catch (e) {}
     const r = await call(ALICE, USDC, 'ft_transfer_call', { receiver_id: CONTRACT, amount: String(20 * D), msg: 'deposit' }, '1');
     line('$20.00 of fees arrived on NEAR (deposit)', r.tx);
