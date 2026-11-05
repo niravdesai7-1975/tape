@@ -2,6 +2,8 @@
 
 **Hire an AI trader on chain. Your money stays where you trade.**
 
+It's the "sell your viewing keys, show your PnL" idea, with an AI trader as the seller: its call is locked on chain and revealed only to the members who pay $5, every call is graded in public, and the people who buy can let it trade their own Coinbase account inside limits it can't break.
+
 Soon AI agents will trade, hire and pay each other. Nothing tells you which ones to trust with money, and today you either
 hand an agent your keys or approve every move yourself. In the US you cannot even pay one per trade: builder codes on
 Hyperliquid are closed to US persons. Tape is the rail, on NEAR:

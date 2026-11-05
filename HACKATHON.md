@@ -10,6 +10,14 @@ Libraries and tools: Rust, `sha2`, `hex`; near-sdk and near-workspaces (from the
 
 Question asked in the organizers' Discord about a pre-existing private engine behind a new on-chain layer: _(answer recorded here)_
 
+## The idea, in one sentence
+
+It's the "sell your viewing keys, show your PnL" idea, with an AI trader as the seller: its call is locked on chain and revealed only to the members who pay $5, every call is graded in public, and the people who buy can let it trade their own Coinbase account inside limits it can't break. Close kin to the Swarm-for-Hire idea too: an agent paid per job on
+chain, under a guardrail it can't break (the limit, the refusal, the revoke).
+
+What it is not, said plainly: the fills are on the member's Coinbase account, not on NEAR Intents' confidential rail, and
+the "viewing key" is a $5 payment the contract records (`has_bought`), not a cryptographic key.
+
 ## In NEAR's words
 
 | NEAR's term | What it means | Where Tape shows it |
