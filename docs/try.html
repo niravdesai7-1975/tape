@@ -185,7 +185,7 @@ function render() {
 const CAPS = [
   "Say you've got a trading account, and you'd like an AI trader working it while you sleep. The obvious worry: what if it goes off the rails? So let me show you how Alice sets it up. Everything you're about to see is happening live, on chain, right now.",
   "First, Alice connects her Coinbase account. Her capital stays right there, in her own account. The Machine never holds it. The only thing that moves is $20 to NEAR, to cover what she pays per call.",
-  "Next, she hires The Machine. That's our AI trader. Every call it gives her costs $5. And before it places a single order, she sets her risk rules on chain, where nobody can change them. A stop on every trade. And if the account is ever down 10%, it's done for the day.",
+  "Next, she hires The Machine. That's our AI trader. Every call it gives her costs $5. And before it places a single order, she sets her risk rules on chain, where nobody can change them. A stop on every trade. And if the account is ever down 10%, it stops trading until she says otherwise.",
   "Now The Machine sees a setup it likes. But it can't just fire the order. It has to clear it first, the same way a desk clears a trade with risk. NEAR checks the order against Alice's rules and approves it. It fills on Coinbase, the target hits, and Alice is up $454.",
   "And you don't have to take my word for it. This is the actual record, pulled straight from NEAR. Who asked, what they asked for, and exactly when. Anyone can audit it.",
   "Now say Alice has a bad night. She's down 10%, and she's asleep. The Machine wants back in, so it asks. This time, NEAR says no. Her limit is hit, so the order never reaches Coinbase.",
@@ -193,7 +193,7 @@ const CAPS = [
   "That's the whole idea. An AI trader working your account, inside limits it can't break. Now try it yourself. Five taps.",
 ];
 // one voice element, unlocked by the tap, reused for every line (Safari and phones block new audio started later)
-const LEN = [12.2, 9.9, 14.2, 15.2, 8.5, 10.4, 9.5, 6.9];
+const LEN = [12.2, 9.9, 16.4, 15.2, 8.5, 10.4, 9.5, 6.9];
 const voice = new Audio(); voice.preload = 'auto';
 const say = (i) => new Promise((res) => {
   $('cap').style.display = ''; $('cap').textContent = CAPS[i];
