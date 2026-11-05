@@ -90,7 +90,7 @@ h1{font-size:34px;line-height:1.15;margin:0 0 6px;font-weight:700}
   <div class="top"><b>The Machine</b><span id="net">testnet · your own transactions</span></div>
   <h1>Try it. Five taps.</h1>
   <p class="sub">Each tap signs a real NEAR testnet transaction from a throwaway judge account. Every line links to it.</p>
-  <button class="btn" id="guide" style="margin:4px 0 10px">▶ Watch it run once · 1 min, with sound</button>
+  <button class="btn" id="guide" style="margin:4px 0 10px">▶ Watch it run once · 2 min, with sound</button>
   <div id="cap" style="display:none;margin:2px 0 10px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);font-size:15px;line-height:1.4;color:var(--text)"></div>
   <div id="verify" class="card" style="display:none;border-color:var(--up)"></div>
   <div id="steps"></div>
@@ -183,17 +183,17 @@ function render() {
 }
 // ---- the guided run: the page taps the five steps itself, on live testnet, and tells the story ----
 const CAPS = [
-  "Let me walk you through it once. This is Alice's account, on NEAR testnet. Everything you're about to see is really happening on chain, right now.",
-  "First, she connects Coinbase. Her money stays right there. Only $20 comes over to NEAR, to pay for calls.",
-  "Then she hires The Machine. $5 a call. And she writes her rules on chain: a stop on every trade, and shut it down if I'm ever down 10%.",
-  "Now The Machine wants to trade. But it can't just do it. It has to ask the chain first. The chain checks her rules and says yes. Coinbase fills. The target hits. $454, for Alice.",
-  "And here's the part I love. You don't have to trust me. This is that exact transaction, pulled straight from NEAR. Who signed it, what it asked for, when. Anyone can check it.",
-  "Now imagine a bad night. She's down 10%, and she's asleep. The Machine asks to trade again. Declined. The order never reaches Coinbase.",
-  "In the morning, Alice is done. One tap: revoke. Watch The Machine try one more time. Refused. It's out. And her money never left Coinbase.",
-  "That's it. Now it's your turn. Five taps, and every one of them is real.",
+  "Say you've got a trading account, and you'd like an AI trader working it while you sleep. The obvious worry: what if it goes off the rails? So let me show you how Alice sets it up. Everything you're about to see is happening live, on chain, right now.",
+  "First, Alice connects her Coinbase account. Her capital stays right there, in her own account. The Machine never holds it. The only thing that moves is $20 to NEAR, to cover what she pays per call.",
+  "Next, she hires The Machine. That's our AI trader. Every call it gives her costs $5. And before it places a single order, she sets her risk rules on chain, where nobody can change them. A stop on every trade. And if the account is ever down 10%, it's done for the day.",
+  "Now The Machine sees a setup it likes. But it can't just fire the order. It has to clear it first, the same way a desk clears a trade with risk. NEAR checks the order against Alice's rules and approves it. It fills on Coinbase, the target hits, and Alice is up $454.",
+  "And you don't have to take my word for it. This is the actual record, pulled straight from NEAR. Who asked, what they asked for, and exactly when. Anyone can audit it.",
+  "Now say Alice has a bad night. She's down 10%, and she's asleep. The Machine wants back in, so it asks. This time, NEAR says no. Her limit is hit, so the order never reaches Coinbase.",
+  "In the morning, Alice is done. She revokes The Machine's access, one tap. It tries one more order, and NEAR rejects it. And through all of it, her capital never left her own account.",
+  "That's the whole idea. An AI trader working your account, inside limits it can't break. Now try it yourself. Five taps.",
 ];
 // one voice element, unlocked by the tap, reused for every line (Safari and phones block new audio started later)
-const LEN = [8.5, 6.6, 7.7, 12.2, 8.9, 7.2, 8.1, 3.9];
+const LEN = [12.2, 9.9, 14.2, 15.2, 8.5, 10.4, 9.5, 6.9];
 const voice = new Audio(); voice.preload = 'auto';
 const say = (i) => new Promise((res) => {
   $('cap').style.display = ''; $('cap').textContent = CAPS[i];
@@ -230,7 +230,7 @@ async function showVerify(tx) {
 let guiding = false;
 const music = new Audio('voice/bgm.mp3'); music.loop = true;
 const fadeMusic = (to, ms) => new Promise(res => { const from = music.volume, t0 = performance.now();
-  const step = (now) => { const k = Math.min(1, (now - t0) / ms); music.volume = from + (to - from) * k; k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+  const step = (now) => { const k = Math.min(1, (now - t0) / ms); music.volume = Math.min(1, Math.max(0, from + (to - from) * k)); k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
 async function guide() {
   if (guiding) return; guiding = true; $('guide').style.display = 'none';
   voice.src = 'voice/g0.mp3'; voice.play().then(() => voice.pause()).catch(() => {});   // unlock inside the tap
